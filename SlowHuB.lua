@@ -145,33 +145,147 @@ end
 
 function sameTeam(plr)
     if not plr or not LocalPlayer then return false end
-    if plr.Team and LocalPlayer.Team then
-        if plr.Team == LocalPlayer.Team then return true end
-        if plr.Team.Name == LocalPlayer.Team.Name then return true end
-    end
-    if plr.TeamColor and LocalPlayer.TeamColor then
-        if plr.TeamColor == LocalPlayer.TeamColor then return true end
-    end
-    local myTeamAttr = LocalPlayer:GetAttribute("Team") or LocalPlayer:GetAttribute("team") or LocalPlayer:GetAttribute("TeamName")
-    local theirTeamAttr = plr:GetAttribute("Team") or plr:GetAttribute("team") or plr:GetAttribute("TeamName")
-    if myTeamAttr and theirTeamAttr and myTeamAttr == theirTeamAttr then
-        return true
-    end
-    if plr:GetAttribute("Gang") and LocalPlayer:GetAttribute("Gang") then
-        if plr:GetAttribute("Gang") == LocalPlayer:GetAttribute("Gang") then
+    if plr == LocalPlayer then return true end
+
+    local myChar = LocalPlayer.Character
+    local theirChar = plr.Character
+
+    -- 1) Team padrão do Roblox
+    pcall(function()
+        if plr.Team and LocalPlayer.Team then
+            if plr.Team == LocalPlayer.Team then return true end
+            if plr.Team.Name and LocalPlayer.Team.Name and plr.Team.Name == LocalPlayer.Team.Name then
+                return true
+            end
+        end
+    end)
+
+    -- 2) TeamColor padrão
+    pcall(function()
+        if plr.TeamColor and LocalPlayer.TeamColor then
+            if plr.TeamColor == LocalPlayer.TeamColor then return true end
+        end
+    end)
+
+    -- 3) Atributos no Player
+    local attrNames = {"Team", "team", "TeamName", "teamname", "Gang", "gang", "Faction", "faction", "Squad", "squad", "GroupId", "groupId"}
+    for _, attr in ipairs(attrNames) do
+        local ok, mine, theirs = pcall(function()
+            return LocalPlayer:GetAttribute(attr), plr:GetAttribute(attr)
+        end)
+        if ok and mine ~= nil and theirs ~= nil and mine == theirs then
             return true
         end
     end
+
+    -- 4) Atributos no Character
+    if myChar and theirChar then
+        for _, attr in ipairs(attrNames) do
+            local ok, mine, theirs = pcall(function()
+                return myChar:GetAttribute(attr), theirChar:GetAttribute(attr)
+            end)
+            if ok and mine ~= nil and theirs ~= nil and mine == theirs then
+                return true
+            end
+        end
+    end
+
+    -- 5) Tags no nome ([RED], [BLUE], [T1], etc)
+    pcall(function()
+        local myName = string.upper(LocalPlayer.Name or "")
+        local theirName = string.upper(plr.Name or "")
+        local myDisplay = string.upper(LocalPlayer.DisplayName or "")
+        local theirDisplay = string.upper(plr.DisplayName or "")
+        local myTag = myName:match("%[(.-)%]") or myDisplay:match("%[(.-)%]")
+        local theirTag = theirName:match("%[(.-)%]") or theirDisplay:match("%[(.-)%]")
+        if myTag and theirTag and myTag ~= "" and myTag == theirTag then
+            return true
+        end
+    end)
+
+    -- 6) Cor do HRP (BrickColor)
+    if myChar and theirChar then
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        local theirHrp = theirChar:FindFirstChild("HumanoidRootPart")
+        if myHrp and theirHrp then
+            pcall(function()
+                if myHrp.BrickColor == theirHrp.BrickColor then
+                    return true
+                end
+            end)
+        end
+    end
+
+    -- 7) Cor do Torso/UpperTorso (skin/camisa de time)
+    if myChar and theirChar then
+        local myTorso = myChar:FindFirstChild("UpperTorso") or myChar:FindFirstChild("Torso")
+        local theirTorso = theirChar:FindFirstChild("UpperTorso") or theirChar:FindFirstChild("Torso")
+        if myTorso and theirTorso then
+            pcall(function()
+                local mc = myTorso.Color
+                local tc = theirTorso.Color
+                if mc and tc then
+                    local diff = (Vector3.new(mc.R, mc.G, mc.B) - Vector3.new(tc.R, tc.G, tc.B)).Magnitude
+                    if diff < 0.05 then
+                        return true
+                    end
+                end
+            end)
+        end
+    end
+
     return false
 end
 
 function isValidTarget(plr, teamcheck)
-    if not plr or plr == LocalPlayer then return false end
+    if not plr then return false end
+    if plr == LocalPlayer then return false end
     if not plr.Parent then return false end
+
     local char = plr.Character
-    if not char then return false end
+    if not char or not char.Parent then return false end
+
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return false end
+    if hum.Health <= 0 then return false end
+    if hum:GetState() == Enum.HumanoidStateType.Dead then return false end
+
+    -- ForceField (spawn protection)
     if char:FindFirstChildOfClass("ForceField") then return false end
-    if teamcheck and sameTeam(plr) then return false end
+
+    -- Atributos de invencibilidade
+    local ok1 = pcall(function()
+        if char:GetAttribute("God") == true then return true end
+        if char:GetAttribute("Invincible") == true then return true end
+        if char:GetAttribute("NoDamage") == true then return true end
+        if char:GetAttribute("Immortal") == true then return true end
+        if plr:GetAttribute("God") == true then return true end
+        if plr:GetAttribute("Invincible") == true then return true end
+        if plr:GetAttribute("Immortal") == true then return true end
+    end)
+    if not ok1 then
+        -- Se deu erro na verificação, assume que não é invencível pra não travar
+    end
+    if char:GetAttribute("God") == true 
+    or char:GetAttribute("Invincible") == true 
+    or char:GetAttribute("NoDamage") == true
+    or char:GetAttribute("Immortal") == true then
+        return false
+    end
+    if plr:GetAttribute("God") == true 
+    or plr:GetAttribute("Invincible") == true
+    or plr:GetAttribute("Immortal") == true then
+        return false
+    end
+
+    -- TeamCheck robusto
+    if teamcheck then
+        local ok, resultado = pcall(sameTeam, plr)
+        if ok and resultado == true then
+            return false
+        end
+    end
+
     return true
 end
 
