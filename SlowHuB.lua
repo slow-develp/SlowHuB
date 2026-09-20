@@ -242,7 +242,6 @@ function openDiscord()
 end
 
 loadConfig()
-
 espFolder = Instance.new("Folder")
 espFolder.Name = "SlowHub_ESP"
 espFolder.Parent = parentGui
@@ -422,17 +421,12 @@ function updateESP()
                             d.Dist.Text = string.format("%dm", math.floor(dist))
                             d.Dist.Position = UDim2.new(0, x, 0, y + h + 2)
                             d.Dist.Size = UDim2.new(0, w, 0, 12)
-                            if dist < 30 then
-                                d.Dist.TextColor3 = Color3.fromRGB(100, 255, 100)
-                            elseif dist < 80 then
-                                d.Dist.TextColor3 = Color3.fromRGB(255, 220, 100)
-                            else
-                                d.Dist.TextColor3 = Color3.fromRGB(255, 100, 100)
-                            end
+                            d.Dist.TextColor3 = Config.ESP.Color
                         else
                             d.Dist.Visible = false
                         end
 
+                        -- 🩸 HP com 4 fontes (MELHORIA)
                         if Config.ESP.ShowHealth then
                             d.HpBg.Visible = true
                             d.HpBg.Position = UDim2.new(0, x - 7, 0, y)
@@ -443,6 +437,42 @@ function updateESP()
                                 if hum and hum.MaxHealth and hum.MaxHealth > 0 then
                                     vida = hum.Health
                                     vidaMax = hum.MaxHealth
+                                end
+                                if not vida or not vidaMax or vidaMax <= 0 then
+                                    local hAttr = char:GetAttribute("Health") or char:GetAttribute("health") or char:GetAttribute("HP")
+                                    local mAttr = char:GetAttribute("MaxHealth") or char:GetAttribute("maxHealth") or char:GetAttribute("MaxHP")
+                                    if hAttr and mAttr and mAttr > 0 then
+                                        vida = hAttr
+                                        vidaMax = mAttr
+                                    end
+                                end
+                                if not vida or not vidaMax or vidaMax <= 0 then
+                                    for _, obj in ipairs(char:GetDescendants()) do
+                                        if obj:IsA("NumberValue") or obj:IsA("IntValue") then
+                                            local n = string.lower(obj.Name)
+                                            if n == "health" or n == "hp" or n == "vida" then
+                                                vida = obj.Value
+                                                local mObj = char:FindFirstChild("MaxHealth") or char:FindFirstChild("MaxHP") or char:FindFirstChild("maxHealth")
+                                                if mObj and mObj.Value and mObj.Value > 0 then
+                                                    vidaMax = mObj.Value
+                                                else
+                                                    vidaMax = 100
+                                                end
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                                if not vida or not vidaMax or vidaMax <= 0 then
+                                    local ls = plr:FindFirstChild("leaderstats")
+                                    if ls then
+                                        local hpStat = ls:FindFirstChild("Health") or ls:FindFirstChild("HP") or ls:FindFirstChild("Vida")
+                                        local maxStat = ls:FindFirstChild("MaxHealth") or ls:FindFirstChild("MaxHP")
+                                        if hpStat then
+                                            vida = hpStat.Value
+                                            if maxStat then vidaMax = maxStat.Value else vidaMax = 100 end
+                                        end
+                                    end
                                 end
                             end)
 
@@ -739,103 +769,64 @@ function recarregarArma()
     return true
 end
 
-aimbotLocked = nil
-aimbotLockTime = 0
-
 function startAimbot()
     if aimbotActive then return end
     aimbotActive = true
-    aimbotLocked = nil
-    aimbotLockTime = 0
-
     task.spawn(function()
         while Config.Aimbot.Enabled do
             local target = getClosest()
+            if target and target.Parent then
+                local targetChar = target:FindFirstAncestorOfClass("Model")
+                local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
+                if targetHum and targetHum.Health > 0 and targetHum:GetState() ~= Enum.HumanoidStateType.Dead then
 
-            if aimbotLocked then
-                local lChar, lHum, lHrp = safeChar(aimbotLocked)
-                if not lChar or not lHum or lHum.Health <= 0 then
-                    aimbotLocked = nil
-                elseif tick() - aimbotLockTime > 2.5 then
-                    aimbotLocked = nil
-                end
-            end
-
-            if not aimbotLocked and target then
-                local tChar = target:FindFirstAncestorOfClass("Model")
-                if tChar then
-                    local plr = Players:GetPlayerFromCharacter(tChar)
-                    if plr and isValidTarget(plr, Config.Aimbot.TeamCheck) then
-                        aimbotLocked = plr
-                        aimbotLockTime = tick()
-                    end
-                end
-            end
-
-            if aimbotLocked then
-                local tChar, tHum = safeChar(aimbotLocked)
-                if tChar and tHum and tHum.Health > 0 then
-                    local aimPart = nil
-                    if Config.Aimbot.Target == "Head" then
-                        aimPart = tChar:FindFirstChild("Head")
-                    else
-                        aimPart = tChar:FindFirstChild("HumanoidRootPart")
+                    if target ~= _ultimoAlvo then
+                        _ultimoAlvo = target
+                        _rajadaRestante = 0
+                        _ultimoTiro = 0
                     end
 
-                    if aimPart and aimPart.Parent then
-                        local camPos = Camera.CFrame.Position
-                        local aimPos = aimPart.Position
+                    local goal = CFrame.new(Camera.CFrame.Position, target.Position)
+                    Camera.CFrame = goal
 
-                        if (aimPos - camPos).Magnitude > 0.1 then
-                            local lookAt = CFrame.new(camPos, aimPos)
-                            local smooth = math.clamp(Config.Aimbot.Smoothness or 0.35, 0.1, 1)
-                            Camera.CFrame = Camera.CFrame:Lerp(lookAt, smooth)
-                        end
-
+                    if Config.Aimbot.AutoShot then
                         RunService.RenderStepped:Wait()
+                        local goal2 = CFrame.new(Camera.CFrame.Position, target.Position)
+                        Camera.CFrame = goal2
 
-                        if aimPart and aimPart.Parent then
-                            local camPos2 = Camera.CFrame.Position
-                            local aimPos2 = aimPart.Position
-                            if (aimPos2 - camPos2).Magnitude > 0.1 then
-                                Camera.CFrame = CFrame.new(camPos2, aimPos2)
+                        local isHead = (target.Name == "Head")
+
+                        if isHead then
+                            if tick() - _ultimoTiro > COOLDOWN_HEAD then
+                                _ultimoTiro = tick()
+                                atirarFluxo()
                             end
-                        end
-
-                        if Config.Aimbot.AutoShot then
-                            local isHead = (aimPart.Name == "Head")
-                            if isHead then
-                                if tick() - _ultimoTiro > COOLDOWN_HEAD then
+                            _rajadaRestante = 0
+                        else
+                            if _rajadaRestante > 0 then
+                                if tick() - _ultimoTiro > COOLDOWN_RAJADA then
                                     _ultimoTiro = tick()
                                     atirarFluxo()
+                                    _rajadaRestante = _rajadaRestante - 1
                                 end
-                                _rajadaRestante = 0
                             else
-                                if _rajadaRestante > 0 then
-                                    if tick() - _ultimoTiro > COOLDOWN_RAJADA then
-                                        _ultimoTiro = tick()
-                                        atirarFluxo()
-                                        _rajadaRestante = _rajadaRestante - 1
-                                    end
-                                else
-                                    if tick() - _ultimoTiro > COOLDOWN_NORMAL then
-                                        _ultimoTiro = tick()
-                                        atirarFluxo()
-                                        _rajadaRestante = TAMANHO_RAJADA - 1
-                                    end
+                                if tick() - _ultimoTiro > COOLDOWN_NORMAL then
+                                    _ultimoTiro = tick()
+                                    atirarFluxo()
+                                    _rajadaRestante = TAMANHO_RAJADA - 1
                                 end
                             end
                         end
                     end
-                else
-                    aimbotLocked = nil
-                end
-            end
 
+                end
+            else
+                _rajadaRestante = 0
+                _ultimoAlvo = nil
+            end
             RunService.RenderStepped:Wait()
         end
         aimbotActive = false
-        aimbotLocked = nil
     end)
 end
 
@@ -945,68 +936,36 @@ Players.PlayerRemoving:Connect(function(plr)
 end)
 -- NOCLIP
 noclipConn = nil
-noclipCharConn = nil
-
 function setNoclip(state)
     if noclipConn then noclipConn:Disconnect() noclipConn = nil end
-    if noclipCharConn then noclipCharConn:Disconnect() noclipCharConn = nil end
     if not state then return end
-
-    local function aplicaNoclip()
-        noclipConn = RunService.Stepped:Connect(function()
-            local char = LocalPlayer.Character
-            if not char then return end
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    pcall(function()
-                        if part.CanCollide then
-                            part.CanCollide = false
-                        end
-                    end)
-                end
+    noclipConn = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") and part.CanCollide then
+                part.CanCollide = false
             end
-        end)
-    end
-
-    aplicaNoclip()
-    noclipCharConn = LocalPlayer.CharacterAdded:Connect(function()
-        if noclipConn then noclipConn:Disconnect() end
-        task.wait(0.2)
-        aplicaNoclip()
+        end
     end)
 end
 
 -- SPEED
 speedConn = nil
-speedCharConn = nil
-
 function setSpeed(state)
     if speedConn then speedConn:Disconnect() speedConn = nil end
-    if speedCharConn then speedCharConn:Disconnect() speedCharConn = nil end
-
-    local function aplicaSpeed()
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if not hum then return end
-        if state then
-            hum.WalkSpeed = Config.Speed.Value
-            speedConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-                if Config.Speed.Enabled and hum.WalkSpeed ~= Config.Speed.Value then
-                    hum.WalkSpeed = Config.Speed.Value
-                end
-            end)
-        else
-            hum.WalkSpeed = 16
-        end
-    end
-
-    aplicaSpeed()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
     if state then
-        speedCharConn = LocalPlayer.CharacterAdded:Connect(function()
-            if speedConn then speedConn:Disconnect() end
-            task.wait(0.5)
-            aplicaSpeed()
+        hum.WalkSpeed = Config.Speed.Value
+        speedConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+            if Config.Speed.Enabled and hum.WalkSpeed ~= Config.Speed.Value then
+                hum.WalkSpeed = Config.Speed.Value
+            end
         end)
+    else
+        hum.WalkSpeed = 16
     end
 end
 
@@ -1014,11 +973,9 @@ end
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
-flyCharConn = nil
 
 function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
-    if flyCharConn then flyCharConn:Disconnect() flyCharConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
@@ -1103,12 +1060,6 @@ end
 function setFly(state)
     if state then
         startFly()
-        flyCharConn = LocalPlayer.CharacterAdded:Connect(function()
-            if not Config.Fly.Enabled then return end
-            task.wait(0.5)
-            stopFly()
-            startFly()
-        end)
         addNotif("Fly", "Ativado. Use o analógico.", 3)
     else
         stopFly()
@@ -1235,14 +1186,13 @@ function setAntiFling(state)
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
         local vel = hrp.AssemblyLinearVelocity
-        if vel.Magnitude > 150 then
-            hrp.AssemblyLinearVelocity = vel.Unit * 30
-            hrp.RotVelocity = Vector3.zero
+        if vel.Magnitude > 200 then
+            hrp.AssemblyLinearVelocity = vel.Unit * 50
         end
     end)
 end
 
--- ANTI-VOID
+-- ANTI-VOID (MELHORADO — volta pra última posição segura)
 antiVoidConn = nil
 antiVoidPos = nil
 
@@ -1325,9 +1275,9 @@ function setFullbright(state)
             originalLighting.FogEnd = Lighting.FogEnd
             originalLighting.GlobalShadows = Lighting.GlobalShadows
         end
-        Lighting.Ambient = Color3.fromRGB(220, 220, 220)
-        Lighting.OutdoorAmbient = Color3.fromRGB(220, 220, 220)
-        Lighting.Brightness = 2
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 3
         Lighting.ClockTime = 14
         Lighting.FogEnd = 1e6
         Lighting.GlobalShadows = false
@@ -1369,10 +1319,7 @@ function gotoPosition(slot)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    pcall(function()
-        hrp.CFrame = cf
-        hrp.Velocity = Vector3.zero
-    end)
+    hrp.CFrame = cf
     return true
 end
 
@@ -1383,10 +1330,7 @@ function gotoPlayer(plr)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
-    pcall(function()
-        hrp.CFrame = targetHrp.CFrame + Vector3.new(0, 0, 3)
-        hrp.Velocity = Vector3.zero
-    end)
+    hrp.CFrame = targetHrp.CFrame + Vector3.new(0, 0, 3)
     return true
 end
 
@@ -1408,7 +1352,7 @@ end
 
 function rejoin()
     queueScriptOnTeleport()
-    task.wait(0.5)
+    task.wait(0.3)
     pcall(function()
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
     end)
@@ -1417,7 +1361,7 @@ end
 function serverHop()
     queueScriptOnTeleport()
     task.spawn(function()
-        task.wait(0.5)
+        task.wait(0.3)
         local ok, servers = pcall(function()
             if not game.HttpGet then return nil end
             local raw = game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100")
@@ -3037,7 +2981,7 @@ function createFlingCard(plr, order)
     nameLbl.Position = UDim2.new(0, 48, 0, 6)
     nameLbl.BackgroundTransparency = 1
     nameLbl.Text = plr.DisplayName or plr.Name
-        nameLbl.TextColor3 = TEXT
+    nameLbl.TextColor3 = TEXT
     nameLbl.Font = Enum.Font.GothamBold
     nameLbl.TextSize = 11
     nameLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -4136,12 +4080,9 @@ function resetEverything()
     restaurarHitboxes()
 
     if noclipConn then pcall(function() noclipConn:Disconnect() end) noclipConn = nil end
-    if noclipCharConn then pcall(function() noclipCharConn:Disconnect() end) noclipCharConn = nil end
     if speedConn then pcall(function() speedConn:Disconnect() end) speedConn = nil end
-    if speedCharConn then pcall(function() speedCharConn:Disconnect() end) speedCharConn = nil end
     if flingConn then pcall(function() flingConn:Disconnect() end) flingConn = nil end
     if flyConn then pcall(function() flyConn:Disconnect() end) flyConn = nil end
-    if flyCharConn then pcall(function() flyCharConn:Disconnect() end) flyCharConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
     flyBodyVel, flyBodyGyro = nil, nil
@@ -4174,7 +4115,6 @@ function resetEverything()
     if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end) antiAfkConn = nil end
     if fovFrame then fovFrame.Visible = false end
     aimbotActive = false
-    aimbotLocked = nil
 end
 
 confirmCloseBtn.MouseButton1Click:Connect(function()
