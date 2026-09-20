@@ -52,8 +52,7 @@ local DISCORD_LINK = "https://discord.com/users/tav.x"
 local SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
 
 ICONS = {
-    Home = "rbxdivider.Size = UDim2.new(0, 1, 0, 24)
-divider.Position = UDim2.new(0, assetid://111637692403997",
+    Home = "rbxassetid://111637692403997",
     Person = "rbxassetid://118410078119588",
     Eye = "rbxassetid://7546367582",
     Box = "rbxassetid://87246322401825",
