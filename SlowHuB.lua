@@ -1254,21 +1254,70 @@ end
 
 -- ANTI-VOID
 antiVoidConn = nil
+antiVoidPos = nil
+
 function setAntiVoid(state)
     if antiVoidConn then antiVoidConn:Disconnect() antiVoidConn = nil end
-    if not state then return end
+    if not state then
+        antiVoidPos = nil
+        return
+    end
+
+    -- Pega o spawn padrão do jogo como fallback
+    local spawnFallback = Vector3.new(0, 100, 0)
+    pcall(function()
+        local sp = workspace:FindFirstChildOfClass("SpawnLocation")
+        if sp then spawnFallback = sp.Position + Vector3.new(0, 5, 0) end
+    end)
+
+    antiVoidPos = spawnFallback
+
+    -- Guarda a posição segura atual assim que ligar
+    task.spawn(function()
+        task.wait(0.5)
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            antiVoidPos = hrp.Position
+        end
+    end)
+
     antiVoidConn = RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if not char then return end
         local hrp = char:FindFirstChild("HumanoidRootPart")
         local hum = char:FindFirstChildOfClass("Humanoid")
         if not hrp or not hum then return end
-        if hrp.Position.Y < -100 then
-            hrp.CFrame = CFrame.new(0, 50, 0)
-            hrp.Velocity = Vector3.zero
+
+        -- Se tá caindo no void (Y muito baixo)
+        if hrp.Position.Y < -50 then
+            -- Tenta voltar pra última posição segura
+            local destino = antiVoidPos or spawnFallback
+            pcall(function()
+                hrp.CFrame = CFrame.new(destino + Vector3.new(0, 5, 0))
+                hrp.Velocity = Vector3.zero
+                hrp.AssemblyLinearVelocity = Vector3.zero
+            end)
+            -- Se ainda cair de novo, vai pro spawn oficial
+            task.wait(0.5)
+            local char2 = LocalPlayer.Character
+            local hrp2 = char2 and char2:FindFirstChild("HumanoidRootPart")
+            if hrp2 and hrp2.Position.Y < -50 then
+                pcall(function()
+                    hrp2.CFrame = CFrame.new(spawnFallback)
+                    hrp2.Velocity = Vector3.zero
+                end)
+            end
         end
+
+        -- Guarda a posição segura a cada 2s (se estiver acima de Y=0)
+        if hrp.Position.Y > 5 then
+            antiVoidPos = hrp.Position
+        end
+
+        -- Previne velocidade vertical absurda pra baixo
         if hrp.Velocity.Y < -300 then
-            hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+            hrp.Velocity = Vector3.new(hrp.Velocity.X, -50, hrp.Velocity.Z)
         end
     end)
 end
