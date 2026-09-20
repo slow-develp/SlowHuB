@@ -70,7 +70,6 @@ local ICON_MAXIMIZE = "rbxassetid://120100397680644"
 local ICON_CLOSE    = "rbxassetid://88418589248976"
 local ICON_PINCEL   = "rbxassetid://130521044774541"
 
-rowCache = {}
 originalLighting = {}
 welcomeShown = false
 getgenv().SlowHubStartTime = tick()
@@ -93,7 +92,7 @@ Config = {
 
 local CONFIG_FILE = "slowhub_config.json"
 
-local function saveConfig()
+function saveConfig()
     if type(writefile) ~= "function" then return false end
     local success, encoded = pcall(function()
         return HttpService:JSONEncode(Config)
@@ -105,7 +104,7 @@ local function saveConfig()
     return false
 end
 
-local function loadConfig()
+function loadConfig()
     if type(isfile) ~= "function" or type(readfile) ~= "function" then return false end
     local exists = pcall(function() return isfile(CONFIG_FILE) end)
     if not exists or not isfile(CONFIG_FILE) then return false end
@@ -129,15 +128,13 @@ local function loadConfig()
     return true
 end
 
-local function resetConfig()
+function resetConfig()
     if type(delfile) == "function" then
         pcall(function() delfile(CONFIG_FILE) end)
     end
 end
 
-loadConfig()
-
-local function safeChar(plr)
+function safeChar(plr)
     if not plr or not plr.Parent then return nil, nil, nil end
     local char = plr.Character
     if not char then return nil, nil, nil end
@@ -146,7 +143,7 @@ local function safeChar(plr)
     return char, hum, hrp
 end
 
-local function sameTeam(plr)
+function sameTeam(plr)
     if not plr or not LocalPlayer then return false end
     if plr.Team and LocalPlayer.Team then
         if plr.Team == LocalPlayer.Team then return true end
@@ -168,7 +165,7 @@ local function sameTeam(plr)
     return false
 end
 
-local function isValidTarget(plr, teamcheck)
+function isValidTarget(plr, teamcheck)
     if not plr or plr == LocalPlayer then return false end
     if not plr.Parent then return false end
     local char = plr.Character
@@ -178,7 +175,7 @@ local function isValidTarget(plr, teamcheck)
     return true
 end
 
-local function getPing()
+function getPing()
     local ping = 0
     pcall(function()
         ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
@@ -186,20 +183,32 @@ local function getPing()
     return ping
 end
 
-local function getPlayersCount()
+function getPlayersCount()
     return #Players:GetPlayers(), Players.MaxPlayers
 end
 
-local function getUptime()
+function getUptime()
     return math.floor(tick() - (getgenv().SlowHubStartTime or tick()))
 end
+
+function openDiscord()
+    pcall(function()
+        if setclipboard then
+            setclipboard(DISCORD_LINK)
+        elseif toclipboard then
+            toclipboard(DISCORD_LINK)
+        end
+    end)
+end
+
+loadConfig()
 espFolder = Instance.new("Folder")
 espFolder.Name = "SlowHub_ESP"
 espFolder.Parent = parentGui
 
 espData = {}
 
-local function destroyESP(plr)
+function destroyESP(plr)
     local d = espData[plr]
     if not d then return end
     for _, obj in pairs(d) do
@@ -208,7 +217,7 @@ local function destroyESP(plr)
     espData[plr] = nil
 end
 
-local function createESP(plr)
+function createESP(plr)
     if espData[plr] then return end
     local d = {}
     local box = Instance.new("Frame")
@@ -310,7 +319,7 @@ local function createESP(plr)
     espData[plr] = d
 end
 
-local function hideESP(d)
+function hideESP(d)
     if d.Box then d.Box.Visible = false end
     if d.Line then d.Line.Visible = false end
     if d.Name then d.Name.Visible = false end
@@ -325,7 +334,7 @@ local function hideESP(d)
     end
 end
 
-local function updateESP()
+function updateESP()
     if not Config.ESP.Enabled then
         for _, d in pairs(espData) do hideESP(d) end
         return
@@ -494,7 +503,7 @@ fovStroke.Thickness = 2.5
 fovStroke.Transparency = 0
 Instance.new("UICorner", fovFrame).CornerRadius = UDim.new(1, 0)
 
-local function updateFOV()
+function updateFOV()
     if not (Config.Aimbot.Enabled and Config.Aimbot.FOVEnabled) then
         fovFrame.Visible = false
         return
@@ -506,7 +515,7 @@ local function updateFOV()
     fovStroke.Color = Config.Aimbot.FOVColor
 end
 
-local function hasLineOfSight(char)
+function hasLineOfSight(char)
     if not char then return false end
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -520,7 +529,7 @@ local function hasLineOfSight(char)
     return result == nil
 end
 
-local function getClosest()
+function getClosest()
     local closest, closestDist = nil, math.huge
     local vp = Camera and Camera.ViewportSize or Vector2.new(1920, 1080)
     local center = Vector2.new(vp.X / 2, vp.Y / 2)
@@ -588,16 +597,16 @@ local function getClosest()
 end
 -- AUTOSHOT FLUXO PVP
 aimbotActive = false
-local _ultimoTiro = 0
-local _rajadaRestante = 0
-local _ultimoAlvo = nil
+_ultimoTiro = 0
+_rajadaRestante = 0
+_ultimoAlvo = nil
 
-local COOLDOWN_HEAD = 0.07
-local COOLDOWN_RAJADA = 0.06
-local COOLDOWN_NORMAL = 0.03
-local TAMANHO_RAJADA = 6
+COOLDOWN_HEAD = 0.07
+COOLDOWN_RAJADA = 0.06
+COOLDOWN_NORMAL = 0.03
+TAMANHO_RAJADA = 6
 
-local function atirarFluxo()
+function atirarFluxo()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return false end
     local hud = pg:FindFirstChild("ButtonsHUD")
@@ -642,7 +651,7 @@ local function atirarFluxo()
     return true
 end
 
-local function getMunicao()
+function getMunicao()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return nil, nil end
     local zexis = pg:FindFirstChild("ZexisGUI")
@@ -659,7 +668,7 @@ local function getMunicao()
     return nil, nil
 end
 
-local function recarregarArma()
+function recarregarArma()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return false end
     local hud = pg:FindFirstChild("ButtonsHUD")
@@ -749,7 +758,7 @@ function startAimbot()
     end)
 end
 
-local _ultimoReloadAuto = 0
+_ultimoReloadAuto = 0
 task.spawn(function()
     while task.wait(0.25) do
         if Config.Aimbot and Config.Aimbot.AutoReload then
@@ -788,7 +797,7 @@ function restaurarHitboxes()
     hitboxOriginalSizes = {}
 end
 
-local function aplicarHitboxEmPlayer(plr)
+function aplicarHitboxEmPlayer(plr)
     if plr == LocalPlayer then return end
     local char = plr.Character
     if not char then return end
@@ -840,7 +849,7 @@ Players.PlayerRemoving:Connect(function(plr)
     hitboxOriginalSizes[plr] = nil
 end)
 
-local function trackPlayer(plr)
+function trackPlayer(plr)
     if plr == LocalPlayer then return end
     createESP(plr)
 end
@@ -893,7 +902,7 @@ flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
 
-local function stopFly()
+function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
     if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
     if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
@@ -907,7 +916,7 @@ local function stopFly()
     end
 end
 
-local function startFly()
+function startFly()
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -1221,7 +1230,7 @@ function gotoPlayer(plr)
 end
 
 -- REJOIN / SERVER HOP
-local function queueScriptOnTeleport()
+function queueScriptOnTeleport()
     local code = 'loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()'
     local queued = false
     pcall(function()
@@ -1275,16 +1284,6 @@ RunService.RenderStepped:Connect(function()
         Camera.FieldOfView = Config.FOVChanger.Value
     end
 end)
-
-function openDiscord()
-    pcall(function()
-        if setclipboard then
-            setclipboard(DISCORD_LINK)
-        elseif toclipboard then
-            toclipboard(DISCORD_LINK)
-        end
-    end)
-end
 gui = Instance.new("ScreenGui")
 gui.Name = "SlowHub"
 gui.ResetOnSpawn = false
@@ -1387,7 +1386,6 @@ capsuleText.AutoButtonColor = false
 capsuleText.ZIndex = 6
 capsuleText.Parent = capsule
 
--- 🎨 Gradiente do texto (fluido, azul escuro → ciano)
 local capsuleTextGradient = Instance.new("UIGradient", capsuleText)
 capsuleTextGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
@@ -1512,17 +1510,7 @@ keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 keyStatus.Parent = keyFrame
 
 discordBtn.MouseButton1Click:Connect(function()
-    pcall(function()
-        if type(openDiscord) == "function" then
-            openDiscord()
-        else
-            if setclipboard then
-                setclipboard(DISCORD_LINK)
-            elseif toclipboard then
-                toclipboard(DISCORD_LINK)
-            end
-        end
-    end)
+    pcall(function() openDiscord() end)
 end)
 
 -- ═══════════ FUNÇÕES UI ═══════════
@@ -1880,7 +1868,6 @@ main.ZIndex = 1
 main.Parent = gui
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 24)
 
--- ═══════════ BORDA GRADIENTE ATRÁS DO MAIN ═══════════
 mainBorder = Instance.new("Frame")
 mainBorder.Name = "MainBorder"
 mainBorder.Size = UDim2.new(0, 504, 0, 344)
@@ -1990,7 +1977,6 @@ headerStroke.Color = PURPLE_BORDER
 headerStroke.Thickness = 1
 headerStroke.Transparency = 1
 
--- 🖌️ ÍCONE DO PINCEL
 local headerIcon = Instance.new("ImageLabel")
 headerIcon.Size = UDim2.new(0, 26, 0, 26)
 headerIcon.Position = UDim2.new(0, 14, 0.5, -13)
@@ -2001,7 +1987,6 @@ headerIcon.ImageColor3 = Color3.fromRGB(220, 220, 230)
 headerIcon.ZIndex = 11
 headerIcon.Parent = header
 
--- TÍTULO
 titleLbl = Instance.new("TextLabel")
 titleLbl.Size = UDim2.new(0, 220, 0, 20)
 titleLbl.Position = UDim2.new(0, 48, 0, 8)
@@ -2014,7 +1999,6 @@ titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 titleLbl.ZIndex = 11
 titleLbl.Parent = header
 
--- 🔑 Gradiente do título (fluido, azul escuro → ciano)
 local titleGradient = Instance.new("UIGradient", titleLbl)
 titleGradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
@@ -2022,7 +2006,6 @@ titleGradient.Color = ColorSequence.new({
 })
 titleGradient.Rotation = 0
 
--- SUBTÍTULO
 local titleSub = Instance.new("TextLabel")
 titleSub.Size = UDim2.new(0, 220, 0, 12)
 titleSub.Position = UDim2.new(0, 48, 0, 28)
@@ -2035,10 +2018,8 @@ titleSub.TextXAlignment = Enum.TextXAlignment.Left
 titleSub.ZIndex = 11
 titleSub.Parent = header
 
--- BOTÕES DO HEADER (16x16, branco sutil)
 local COR_ICONE = Color3.fromRGB(255, 255, 255)
 
--- ➖ MINIMIZAR
 minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 28, 0, 28)
 minBtn.Position = UDim2.new(1, -106, 0.5, -14)
@@ -2062,7 +2043,6 @@ minIcon.ScaleType = Enum.ScaleType.Fit
 minIcon.ZIndex = 12
 minIcon.Parent = minBtn
 
--- ⛶ MAXIMIZAR
 maxBtn = Instance.new("TextButton")
 maxBtn.Size = UDim2.new(0, 28, 0, 28)
 maxBtn.Position = UDim2.new(1, -76, 0.5, -14)
@@ -2086,7 +2066,6 @@ maxIcon.ScaleType = Enum.ScaleType.Fit
 maxIcon.ZIndex = 12
 maxIcon.Parent = maxBtn
 
--- ✕ FECHAR
 closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 28, 0, 28)
 closeBtn.Position = UDim2.new(1, -46, 0.5, -14)
@@ -2110,7 +2089,6 @@ closeIcon.ScaleType = Enum.ScaleType.Fit
 closeIcon.ZIndex = 12
 closeIcon.Parent = closeBtn
 
--- HOVER
 minBtn.MouseEnter:Connect(function()
     TweenService:Create(minBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.85, BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
 end)
@@ -2132,7 +2110,6 @@ closeBtn.MouseLeave:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 end)
 
--- FOOTER
 footer = Instance.new("Frame")
 footer.Size = UDim2.new(1, 0, 0, FOOTER_H)
 footer.Position = UDim2.new(0, 0, 1, -FOOTER_H)
@@ -2414,7 +2391,7 @@ profStatus.TextXAlignment = Enum.TextXAlignment.Right
 profStatus.ZIndex = 130
 profStatus.Parent = profileCard
 
-local function createInfoBox(x, y, w, h, icon, label, valorInicial, corIcon)
+function createInfoBox(x, y, w, h, icon, label, valorInicial, corIcon)
     local box = Instance.new("Frame")
     box.Size = UDim2.new(0, w, 0, h)
     box.Position = UDim2.new(0, x, 0, y)
@@ -2631,7 +2608,7 @@ playerPad.PaddingRight = UDim.new(0, 2)
 
 playerCards = {}
 
-local function createPlayerCard(plr, order)
+function createPlayerCard(plr, order)
     local card = Instance.new("Frame")
     card.Size = UDim2.new(1, -4, 0, 40)
     card.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
@@ -2705,7 +2682,7 @@ local function createPlayerCard(plr, order)
     }
 end
 
-local function refreshPlayers()
+function refreshPlayers()
     for _, data in pairs(playerCards) do
         if data.frame then data.frame:Destroy() end
     end
@@ -2853,7 +2830,7 @@ flingListPad.PaddingRight = UDim.new(0, 4)
 flingSelectedTargets = {}
 flingCards = {}
 
-local function updateFlingStatus()
+function updateFlingStatus()
     local count = 0
     for _ in pairs(flingSelectedTargets) do count = count + 1 end
     if flingActiveStatus and flingActiveStatus.Parent then
@@ -2867,7 +2844,7 @@ local function updateFlingStatus()
     end
 end
 
-local function createFlingCard(plr, order)
+function createFlingCard(plr, order)
     if plr == LocalPlayer then return end
 
     local card = Instance.new("Frame")
@@ -2903,7 +2880,254 @@ local function createFlingCard(plr, order)
     nameLbl.Size = UDim2.new(1, -100, 0, 15)
     nameLbl.Position = UDim2.new(0, 48, 0, 6)
     nameLbl.BackgroundTransparency = 1
-        nameLbl.Text = plr.DisplayName or plr.Name
+    nameLbl.Text = plr.DisplayName or plr.Name
+    nameLbl.TextColor3 = TEXT
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextSize = 11
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.ZIndex = 140
+    nameLbl.Parent = card
+
+    local userLbl = Instance.new("TextLabel")
+    userLbl.Size = UDim2.new(1, -140, 0, 12)
+    userLbl.Position = UDim2.new(0, 44, 0, 20)
+    userLbl.BackgroundTransparency = 1
+    userLbl.Text = "@" .. plr.Name
+    userLbl.TextColor3 = TEXTDIM
+    userLbl.Font = Enum.Font.Gotham
+    userLbl.TextSize = 9
+    userLbl.TextXAlignment = Enum.TextXAlignment.Left
+    userLbl.ZIndex = 140
+    userLbl.Parent = card
+
+    local gotoBtn = Instance.new("TextButton")
+    gotoBtn.Size = UDim2.new(0, 60, 0, 24)
+    gotoBtn.Position = UDim2.new(1, -68, 0.5, -12)
+    gotoBtn.BackgroundColor3 = TOGGLE_ON_COLOR
+    gotoBtn.Text = "Goto"
+    gotoBtn.TextColor3 = Color3.new(1, 1, 1)
+    gotoBtn.Font = Enum.Font.GothamBold
+    gotoBtn.TextSize = 10
+    gotoBtn.AutoButtonColor = false
+    gotoBtn.ZIndex = 140
+    gotoBtn.Parent = card
+    Instance.new("UICorner", gotoBtn).CornerRadius = UDim.new(0, 6)
+
+    gotoBtn.MouseButton1Click:Connect(function()
+        local ok = gotoPlayer(plr)
+        if ok then
+            addNotif("Goto", "Teleportado para " .. plr.Name)
+        else
+            addNotif("Erro", "Não foi possível teleportar.")
+        end
+    end)
+
+    playerCards[plr.UserId] = {
+        frame = card,
+        name = string.lower(plr.DisplayName or plr.Name),
+        username = string.lower(plr.Name)
+    }
+end
+
+function refreshPlayers()
+    for _, data in pairs(playerCards) do
+        if data.frame then data.frame:Destroy() end
+    end
+    playerCards = {}
+    local order = 0
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            order += 1
+            createPlayerCard(plr, order)
+        end
+    end
+end
+
+refreshPlayers()
+
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local q = string.lower(searchBox.Text or "")
+    for _, data in pairs(playerCards) do
+        if data.frame and data.frame.Parent then
+            local match = q == ""
+                or string.find(data.name, q, 1, true)
+                or string.find(data.username, q, 1, true)
+            data.frame.Visible = match
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function()
+    task.wait(1)
+    refreshPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    local data = playerCards[plr.UserId]
+    if data and data.frame then data.frame:Destroy() end
+    playerCards[plr.UserId] = nil
+end)
+
+-- ═══════════ PÁGINA MOVIMENTO ═══════════
+movementPage = createPage("Movimento")
+addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
+
+noclipCard = makeCard(movementPage, 56, 32)
+makeLabel(noclipCard, "Noclip", 10, 200)
+makeToggle(noclipCard, Config.Noclip.Enabled, function(s)
+    Config.Noclip.Enabled = s
+    setNoclip(s)
+end)
+
+speedCard = makeCard(movementPage, 94, 32)
+makeLabel(speedCard, "Speed", 10, 150)
+speedInput = makeInput(speedCard, 6, tostring(Config.Speed.Value), 50, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Speed.Value = math.clamp(n, 16, 200) end
+end)
+speedInput.Position = UDim2.new(1, -110, 0.5, -12)
+makeToggle(speedCard, Config.Speed.Enabled, function(s)
+    Config.Speed.Enabled = s
+    setSpeed(s)
+end)
+
+flyCard = makeCard(movementPage, 132, 32)
+makeLabel(flyCard, "Fly", 10, 100)
+flySpeedInput = makeInput(flyCard, 6, tostring(Config.Fly.Speed), 50, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Fly.Speed = math.clamp(n, 10, 500) end
+end)
+flySpeedInput.Position = UDim2.new(1, -110, 0.5, -12)
+makeToggle(flyCard, Config.Fly.Enabled, function(s)
+    Config.Fly.Enabled = s
+    setFly(s)
+end)
+
+jumpCard = makeCard(movementPage, 170, 32)
+makeLabel(jumpCard, "Infinite Jump", 10, 200)
+makeToggle(jumpCard, Config.InfiniteJump.Enabled, function(s)
+    Config.InfiniteJump.Enabled = s
+    setInfJump(s)
+end)
+
+-- ═══════════ PÁGINA FLING ═══════════
+flingPage = createPage("Fling")
+addPageTitle(flingPage, "Fling", "Selecione os jogadores pra arremessar")
+
+flingSearchBar = Instance.new("Frame")
+flingSearchBar.Size = UDim2.new(1, -24, 0, 32)
+flingSearchBar.Position = UDim2.new(0, 12, 0, 50)
+flingSearchBar.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+flingSearchBar.BackgroundTransparency = 0.2
+flingSearchBar.BorderSizePixel = 0
+flingSearchBar.ZIndex = 120
+flingSearchBar.Parent = flingPage
+Instance.new("UICorner", flingSearchBar).CornerRadius = UDim.new(0, 10)
+local sbStroke = Instance.new("UIStroke", flingSearchBar)
+sbStroke.Color = PURPLE_BORDER
+sbStroke.Thickness = 1
+sbStroke.Transparency = 0.6
+
+flingSearchIcon = Instance.new("ImageLabel")
+flingSearchIcon.Size = UDim2.new(0, 14, 0, 14)
+flingSearchIcon.Position = UDim2.new(0, 10, 0.5, -7)
+flingSearchIcon.BackgroundTransparency = 1
+flingSearchIcon.Image = ICONS.Person
+flingSearchIcon.ImageColor3 = PURPLE_BORDER
+flingSearchIcon.ZIndex = 130
+flingSearchIcon.Parent = flingSearchBar
+
+flingSearchBox = Instance.new("TextBox")
+flingSearchBox.Size = UDim2.new(1, -32, 1, 0)
+flingSearchBox.Position = UDim2.new(0, 30, 0, 0)
+flingSearchBox.BackgroundTransparency = 1
+flingSearchBox.Text = ""
+flingSearchBox.PlaceholderText = "Buscar jogador..."
+flingSearchBox.PlaceholderColor3 = TEXTDIM
+flingSearchBox.TextColor3 = TEXT
+flingSearchBox.Font = Enum.Font.Gotham
+flingSearchBox.TextSize = 11
+flingSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+flingSearchBox.ClearTextOnFocus = false
+flingSearchBox.ZIndex = 130
+flingSearchBox.Parent = flingSearchBar
+
+flingList = Instance.new("ScrollingFrame")
+flingList.Size = UDim2.new(1, -24, 1, -220)
+flingList.Position = UDim2.new(0, 12, 0, 88)
+flingList.BackgroundTransparency = 1
+flingList.BorderSizePixel = 0
+flingList.ScrollBarThickness = 3
+flingList.ScrollBarImageColor3 = ACCENT
+flingList.CanvasSize = UDim2.new(0, 0, 0, 0)
+flingList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+flingList.ZIndex = 120
+flingList.Parent = flingPage
+
+flingListLayout = Instance.new("UIListLayout", flingList)
+flingListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+flingListLayout.Padding = UDim.new(0, 6)
+
+flingListPad = Instance.new("UIPadding", flingList)
+flingListPad.PaddingTop = UDim.new(0, 4)
+flingListPad.PaddingBottom = UDim.new(0, 6)
+flingListPad.PaddingLeft = UDim.new(0, 4)
+flingListPad.PaddingRight = UDim.new(0, 4)
+
+flingSelectedTargets = {}
+flingCards = {}
+
+function updateFlingStatus()
+    local count = 0
+    for _ in pairs(flingSelectedTargets) do count = count + 1 end
+    if flingActiveStatus and flingActiveStatus.Parent then
+        if flingActive then
+            flingActiveStatus.Text = "🟢  Flingando " .. count .. " jogador(es)"
+            flingActiveStatus.TextColor3 = Color3.fromRGB(80, 220, 120)
+        else
+            flingActiveStatus.Text = "⚪  " .. count .. " jogador(es) selecionado(s)"
+            flingActiveStatus.TextColor3 = TEXTDIM
+        end
+    end
+end
+
+function createFlingCard(plr, order)
+    if plr == LocalPlayer then return end
+
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, -8, 0, 46)
+    card.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+    card.BackgroundTransparency = 0.15
+    card.BorderSizePixel = 0
+    card.LayoutOrder = order
+    card.ZIndex = 130
+    card.Parent = flingList
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
+
+    local cardStroke = Instance.new("UIStroke", card)
+    cardStroke.Color = PURPLE_BORDER
+    cardStroke.Thickness = 1
+    cardStroke.Transparency = 0.7
+
+    local avatar = Instance.new("ImageLabel")
+    avatar.Size = UDim2.new(0, 32, 0, 32)
+    avatar.Position = UDim2.new(0, 8, 0.5, -16)
+    avatar.BackgroundColor3 = CARD
+    avatar.BorderSizePixel = 0
+    avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=100&h=100"
+    avatar.ZIndex = 140
+    avatar.Parent = card
+    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+    local avStroke = Instance.new("UIStroke", avatar)
+    avStroke.Color = PURPLE_BORDER
+    avStroke.Thickness = 1.5
+    avStroke.Transparency = 0.3
+
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -100, 0, 15)
+    nameLbl.Position = UDim2.new(0, 48, 0, 6)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = plr.DisplayName or plr.Name
     nameLbl.TextColor3 = TEXT
     nameLbl.Font = Enum.Font.GothamBold
     nameLbl.TextSize = 11
@@ -2968,7 +3192,7 @@ local function createFlingCard(plr, order)
     }
 end
 
-local function refreshFlingList()
+function refreshFlingList()
     for _, data in pairs(flingCards) do
         if data.frame then data.frame:Destroy() end
     end
@@ -3176,7 +3400,7 @@ savedLayout.Padding = UDim.new(0, 4)
 
 savedSlots = {}
 
-local function refreshSavedSlots()
+function refreshSavedSlots()
     for _, obj in ipairs(savedList:GetChildren()) do
         if obj:IsA("Frame") then obj:Destroy() end
     end
@@ -3420,7 +3644,7 @@ targetOptTorso.ZIndex = 9999
 targetOptTorso.Parent = targetDropdown
 Instance.new("UICorner", targetOptTorso).CornerRadius = UDim.new(0, 6)
 
-local function atualizarDropdown()
+function atualizarDropdown()
     targetBtn.Text = "🎯  " .. Config.Aimbot.Target .. "  ▼"
     if Config.Aimbot.Target == "Head" then
         targetOptHead.BackgroundColor3 = ACCENT
@@ -3433,7 +3657,7 @@ end
 
 atualizarDropdown()
 
-local dropdownAbertoEm = 0
+dropdownAbertoEm = 0
 
 targetBtn.MouseButton1Click:Connect(function()
     targetDropdown.Visible = not targetDropdown.Visible
@@ -3458,7 +3682,7 @@ targetOptTorso.MouseButton1Click:Connect(function()
     atualizarDropdown()
     targetDropdown.Visible = false
     pcall(function() saveConfig() end)
-end
+end)
 
 UIS.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -3773,9 +3997,9 @@ capsuleText.MouseButton1Click:Connect(function()
 end)
 
 -- DRAG DA CÁPSULA
-local capsuleDragging = false
-local capsuleDragStart = nil
-local capsuleStartPos = nil
+capsuleDragging = false
+capsuleDragStart = nil
+capsuleStartPos = nil
 
 dragZone.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -3835,9 +4059,9 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 -- DRAG DO PAINEL
-local mainDragging = false
-local mainDragStart = nil
-local mainStartPos = nil
+mainDragging = false
+mainDragStart = nil
+mainStartPos = nil
 
 header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -3954,7 +4178,7 @@ confirmCloseBtn.MouseLeave:Connect(function()
     TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = ACCENT}):Play()
 end)
 
-local function openCloseModal()
+function openCloseModal()
     closeModal.Visible = true
     closeModal.BackgroundTransparency = 1
     modalBox.Size = UDim2.new(0, 260, 0, 130)
@@ -3966,7 +4190,7 @@ local function openCloseModal()
     }):Play()
 end
 
-local function closeCloseModal()
+function closeCloseModal()
     TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
     TweenService:Create(modalBox, TweenInfo.new(0.2), {
         Size = UDim2.new(0, 260, 0, 130),
@@ -3978,7 +4202,7 @@ end
 
 cancelBtn.MouseButton1Click:Connect(closeCloseModal)
 
-local function resetEverything()
+function resetEverything()
     for section, data in pairs(Config) do
         if type(data) == "table" and data.Enabled ~= nil then
             data.Enabled = false
@@ -4077,7 +4301,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- VALIDAÇÃO DA KEY
-local function tryValidateKey()
+function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == KEY then
         keyStatus.TextColor3 = SUCCESS
@@ -4107,9 +4331,9 @@ keyInput.FocusLost:Connect(function(enter)
 end)
 
 -- DRAG DA KEY
-local keyDragging = false
-local keyDragStart = nil
-local keyStartPos = nil
+keyDragging = false
+keyDragStart = nil
+keyStartPos = nil
 
 keyFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
