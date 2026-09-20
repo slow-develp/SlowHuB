@@ -1511,7 +1511,19 @@ keyStatus.TextSize = 11
 keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 keyStatus.Parent = keyFrame
 
-discordBtn.MouseButton1Click:Connect(openDiscord)
+discordBtn.MouseButton1Click:Connect(function()
+    pcall(function()
+        if type(openDiscord) == "function" then
+            openDiscord()
+        else
+            if setclipboard then
+                setclipboard(DISCORD_LINK)
+            elseif toclipboard then
+                toclipboard(DISCORD_LINK)
+            end
+        end
+    end)
+end)
 
 -- ═══════════ FUNÇÕES UI ═══════════
 function makeCard(parent, y, h)
