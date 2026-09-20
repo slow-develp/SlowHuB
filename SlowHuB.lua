@@ -828,14 +828,33 @@ function startAimbot()
                         _ultimoTiro = 0
                     end
 
-                    local goal = CFrame.new(Camera.CFrame.Position, target.Position)
-                    Camera.CFrame = goal
+                    -- ✅ MIRA CORRIGIDA (não trava pra baixo)
+                    local camPos = Camera.CFrame.Position
+                    local targetPos = target.Position
+
+                    -- Verifica se o alvo está realmente visível (evita mira doida)
+                    local dir = (targetPos - camPos)
+                    if dir.Magnitude > 0.1 then
+                        local lookAt = CFrame.new(camPos, targetPos)
+
+                        -- Suavidade configurável (0.05 = travado, 1 = lento)
+                        local smooth = math.clamp(Config.Aimbot.Smoothness or 0.25, 0.05, 1)
+                        Camera.CFrame = Camera.CFrame:Lerp(lookAt, smooth)
+                    end
+
+                    -- 🔑 Aguarda o próximo frame ANTES de atirar
+                    RunService.RenderStepped:Wait()
+
+                    -- Re-mira antes do tiro (garante que a câmera tá no alvo)
+                    if target and target.Parent then
+                        local camPos2 = Camera.CFrame.Position
+                        local targetPos2 = target.Position
+                        if (targetPos2 - camPos2).Magnitude > 0.1 then
+                            Camera.CFrame = CFrame.new(camPos2, targetPos2)
+                        end
+                    end
 
                     if Config.Aimbot.AutoShot then
-                        RunService.RenderStepped:Wait()
-                        local goal2 = CFrame.new(Camera.CFrame.Position, target.Position)
-                        Camera.CFrame = goal2
-
                         local isHead = (target.Name == "Head")
 
                         if isHead then
@@ -860,7 +879,6 @@ function startAimbot()
                             end
                         end
                     end
-
                 end
             else
                 _rajadaRestante = 0
