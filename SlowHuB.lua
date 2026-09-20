@@ -369,19 +369,26 @@ function createESP(plr)
     distLbl.Parent = espFolder
 
     local hpBg = Instance.new("Frame")
-    hpBg.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-    hpBg.BorderSizePixel = 0
-    hpBg.Visible = false
-    hpBg.ZIndex = 6
-    hpBg.Parent = espFolder
-    Instance.new("UICorner", hpBg).CornerRadius = UDim.new(1, 0)
-    local hpBar = Instance.new("Frame")
-    hpBar.BackgroundColor3 = SUCCESS
-    hpBar.BorderSizePixel = 0
-    hpBar.Size = UDim2.new(1, 0, 1, 0)
-    hpBar.ZIndex = 7
-    hpBar.Parent = hpBg
-    Instance.new("UICorner", hpBar).CornerRadius = UDim.new(1, 0)
+hpBg.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+hpBg.BorderSizePixel = 0
+hpBg.Visible = false
+hpBg.ZIndex = 6
+hpBg.Parent = espFolder
+Instance.new("UICorner", hpBg).CornerRadius = UDim.new(0, 2)
+
+local hpBar = Instance.new("Frame")
+hpBar.BackgroundColor3 = SUCCESS
+hpBar.BorderSizePixel = 0
+hpBar.Size = UDim2.new(1, 0, 1, 0)
+hpBar.ZIndex = 7
+hpBar.Parent = hpBg
+Instance.new("UICorner", hpBar).CornerRadius = UDim.new(0, 2)
+
+-- 🩸 Contorno (stroke) pra destacar em qualquer fundo
+local hpStroke = Instance.new("UIStroke", hpBg)
+hpStroke.Color = Color3.fromRGB(0, 0, 0)
+hpStroke.Thickness = 1
+hpStroke.Transparency = 0.3
 
     local line = Instance.new("Frame")
     line.Name = "Line"
@@ -449,63 +456,87 @@ function hideESP(d)
 end
 
 function updateESP()
-    if not Config.ESP.Enabled then
-        for _, d in pairs(espData) do hideESP(d) end
-        return
+    if Config.ESP.ShowHealth then
+    d.HpBg.Visible = true
+    d.HpBg.Position = UDim2.new(0, x - 7, 0, y)
+    d.HpBg.Size = UDim2.new(0, 4, 0, h)
+
+    -- 🩸 Pega vida de várias fontes (universal)
+    local vida, vidaMax = nil, nil
+    pcall(function()
+        -- Fonte 1: Humanoid padrão
+        if hum and hum.MaxHealth and hum.MaxHealth > 0 then
+            vida = hum.Health
+            vidaMax = hum.MaxHealth
+        end
+
+        -- Fonte 2: Atributo Health no char/hrp
+        if not vida or not vidaMax or vidaMax <= 0 then
+            local hAttr = char:GetAttribute("Health") or char:GetAttribute("health") or char:GetAttribute("HP")
+            local mAttr = char:GetAttribute("MaxHealth") or char:GetAttribute("maxHealth") or char:GetAttribute("MaxHP")
+            if hAttr and mAttr and mAttr > 0 then
+                vida = hAttr
+                vidaMax = mAttr
+            end
+        end
+
+        -- Fonte 3: Value Objects dentro do char (Health / HP / Vida)
+        if not vida or not vidaMax or vidaMax <= 0 then
+            for _, obj in ipairs(char:GetDescendants()) do
+                if obj:IsA("NumberValue") or obj:IsA("IntValue") then
+                    local n = string.lower(obj.Name)
+                    if n == "health" or n == "hp" or n == "vida" then
+                        vida = obj.Value
+                        local mObj = char:FindFirstChild("MaxHealth") or char:FindFirstChild("MaxHP") or char:FindFirstChild("maxHealth")
+                        if mObj and mObj.Value and mObj.Value > 0 then
+                            vidaMax = mObj.Value
+                        else
+                            vidaMax = 100
+                        end
+                        break
+                    end
+                end
+            end
+        end
+
+        -- Fonte 4: Leaderstats (alguns jogos usam)
+        if not vida or not vidaMax or vidaMax <= 0 then
+            local ls = plr:FindFirstChild("leaderstats")
+            if ls then
+                local hpStat = ls:FindFirstChild("Health") or ls:FindFirstChild("HP") or ls:FindFirstChild("Vida")
+                local maxStat = ls:FindFirstChild("MaxHealth") or ls:FindFirstChild("MaxHP")
+                if hpStat then
+                    vida = hpStat.Value
+                    if maxStat then vidaMax = maxStat.Value else vidaMax = 100 end
+                end
+            end
+        end
+    end)
+
+    -- Se achou vida, atualiza a barra
+    if vida and vidaMax and vidaMax > 0 then
+        local pct = math.clamp(vida / vidaMax, 0, 1)
+        d.HpBar.Size = UDim2.new(1, 0, pct, 0)
+        d.HpBar.Position = UDim2.new(0, 0, 1 - pct, 0)
+
+        -- 🎨 Cor dinâmica: verde → amarelo → vermelho
+        local cor
+        if pct > 0.6 then
+            cor = Color3.fromRGB(80, 220, 100)
+        elseif pct > 0.3 then
+            cor = Color3.fromRGB(255, 200, 60)
+        else
+            cor = Color3.fromRGB(230, 60, 60)
+        end
+        d.HpBar.BackgroundColor3 = cor
+    else
+        -- Sem dados de vida → esconde a barra
+        d.HpBg.Visible = false
     end
-    local localChar = LocalPlayer.Character
-    local localHrp = localChar and localChar:FindFirstChild("HumanoidRootPart")
-    for plr, d in pairs(espData) do
-        if isValidTarget(plr, Config.ESP.TeamCheck) then
-            local char, hum, hrp = safeChar(plr)
-            if (char and hum and hrp) and hum.Health > 0 and char.Parent and plr.Parent then
-                local head = char:FindFirstChild("Head")
-                if head then
-                    local headPos, headOn = Camera:WorldToViewportPoint(head.Position)
-                    local footPos, footOn = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
-                    if headOn and footOn then
-                        local h = math.abs(footPos.Y - headPos.Y)
-                        local w = h * 0.6
-                        local x = headPos.X - w / 2
-                        local y = headPos.Y
-                        d.Box.Visible = true
-                        d.Box.Position = UDim2.new(0, x, 0, y)
-                        d.Box.Size = UDim2.new(0, w, 0, h)
-                        d.Stroke.Color = Config.ESP.Color
-                        if Config.ESP.ShowName then
-                            d.Name.Visible = true
-                            d.Name.Text = plr.Name
-                            d.Name.Position = UDim2.new(0, x, 0, y - 16)
-                            d.Name.Size = UDim2.new(0, w, 0, 14)
-                            d.Name.TextColor3 = Config.ESP.Color
-                        else
-                            d.Name.Visible = false
-                        end
-                        if Config.ESP.ShowDistance then
-                            d.Dist.Visible = true
-                            local dist = localHrp and (localHrp.Position - hrp.Position).Magnitude or 0
-                            d.Dist.Text = string.format("%dm", math.floor(dist))
-                            d.Dist.Position = UDim2.new(0, x, 0, y + h + 2)
-                            d.Dist.Size = UDim2.new(0, w, 0, 12)
-                            d.Dist.TextColor3 = Config.ESP.Color
-                        else
-                            d.Dist.Visible = false
-                        end
-                        if Config.ESP.ShowHealth then
-                            d.HpBg.Visible = true
-                            d.HpBg.Position = UDim2.new(0, x - 6, 0, y)
-                            d.HpBg.Size = UDim2.new(0, 3, 0, h)
-                            local pct = math.clamp(hum.Health / hum.MaxHealth, 0, 1)
-                            d.HpBar.Size = UDim2.new(1, 0, pct, 0)
-                            d.HpBar.Position = UDim2.new(0, 0, 1 - pct, 0)
-                            d.HpBar.BackgroundColor3 = Color3.fromRGB(
-                                math.floor(255 * (1 - pct)),
-                                math.floor(255 * pct),
-                                60
-                            )
-                        else
-                            d.HpBg.Visible = false
-                        end
+else
+    d.HpBg.Visible = false
+    end
+                        
                         if Config.ESP.ShowLines and d.Line then
                             local vp = Camera.ViewportSize
                             local startX = vp.X / 2
