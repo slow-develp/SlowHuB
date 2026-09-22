@@ -955,7 +955,7 @@ task.spawn(function()
     end
 end)
 
--- ═══════════ HITBOX UNIVERSAL (quadrado azul visível) ═══════════
+-- ═══════════ HITBOX UNIVERSAL ═══════════
 hitboxConn = nil
 hitboxExtraPartes = {}
 
@@ -1000,56 +1000,19 @@ function aplicarHitboxEmPlayer(plr)
             extraPart.TopSurface = Enum.SurfaceType.Smooth
             extraPart.BottomSurface = Enum.SurfaceType.Smooth
 
-            -- 🔑 SETA O CFrame ANTES DE PARENTEAR (senão fica em 0,0,0)
+            -- Seta CFrame ANTES de parentear
             extraPart.CFrame = hrp.CFrame
 
-            -- 🔑 PARENTEIA PRIMEIRO
+            -- Parenteia primeiro
             extraPart.Parent = char
 
-            -- 🔑 USA WELD (não WeldConstraint) — muito mais confiável
+            -- Weld confiável
             local weld = Instance.new("Weld")
-            weld.Part0 = hrp        -- HRP é o "dono"
-            weld.Part1 = extraPart  -- a peça segue o HRP
+            weld.Part0 = hrp
+            weld.Part1 = extraPart
             weld.C0 = CFrame.new(0, 0, 0)
             weld.C1 = CFrame.new(0, 0, 0)
             weld.Parent = extraPart
-
-            table.insert(hitboxExtraPartes[plr], extraPart)
-        end)
-    else
-        -- Atualiza tamanho se já existe
-        for _, part in ipairs(hitboxExtraPartes[plr]) do
-            if part and part.Parent then
-                pcall(function()
-                    part.Size = Vector3.new(size, size, size)
-                end)
-            end
-        end
-    end
-end
-
-    -- Cria o quadrado azul visível 1x por player
-    if #hitboxExtraPartes[plr] == 0 then
-        pcall(function()
-            local extraPart = Instance.new("Part")
-            extraPart.Name = "SlowHubHitbox"
-            extraPart.Size = Vector3.new(size, size, size)
-            extraPart.Transparency = 0.7                    -- 🔑 semi-transparente
-            extraPart.Color = Color3.fromRGB(80, 180, 255)  -- 🔑 azul neon
-            extraPart.Material = Enum.Material.Neon         -- 🔑 brilha
-            extraPart.CanCollide = false                    -- 🔑 não empurra
-            extraPart.CanTouch = true                       -- 🔑 detecta toque
-            extraPart.CanQuery = true                       -- 🔑 detecta raycast
-            extraPart.Massless = true
-            extraPart.Anchored = false
-            extraPart.Parent = char
-
-            -- Solda no HRP (segue o player)
-            local weld = Instance.new("WeldConstraint")
-            weld.Part0 = extraPart
-            weld.Part1 = hrp
-            weld.Parent = extraPart
-            extraPart.CFrame = hrp.CFrame
 
             table.insert(hitboxExtraPartes[plr], extraPart)
         end)
@@ -1076,14 +1039,14 @@ function setHitbox(state)
         return
     end
 
-    -- Aplica imediatamente
+    -- Aplica imediatamente em todos
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             pcall(function() aplicarHitboxEmPlayer(plr) end)
         end
     end
 
-    -- Loop pra manter atualizado (Heartbeat = antes da física, melhor compatibilidade)
+    -- Loop pra manter atualizado
     hitboxConn = RunService.Heartbeat:Connect(function()
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer then
@@ -1092,30 +1055,43 @@ function setHitbox(state)
         end
     end)
 
-    -- Re-aplica quando alguém respawnar
+    -- Re-aplica no respawn dos players atuais
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             plr.CharacterAdded:Connect(function()
                 if Config.Hitbox.Enabled then
                     task.wait(0.5)
                     hitboxExtraPartes[plr] = {}
-                    aplicarHitboxEmPlayer(plr)
+                    pcall(function() aplicarHitboxEmPlayer(plr) end)
                 end
             end)
         end
     end
 
-    -- Re-aplica quando alguém entrar no servidor
+    -- Re-aplica pra quem entrar depois
     Players.PlayerAdded:Connect(function(plr)
         if Config.Hitbox.Enabled and plr ~= LocalPlayer then
             plr.CharacterAdded:Connect(function()
-                task.wait(0.5)
-                hitboxExtraPartes[plr] = {}
-                aplicarHitboxEmPlayer(plr)
+                if Config.Hitbox.Enabled then
+                    task.wait(0.5)
+                    hitboxExtraPartes[plr] = {}
+                    pcall(function() aplicarHitboxEmPlayer(plr) end)
+                end
             end)
         end
     end)
-end        
+end
+
+Players.PlayerRemoving:Connect(function(plr)
+    if hitboxExtraPartes[plr] then
+        for _, part in ipairs(hitboxExtraPartes[plr]) do
+            if part and part.Parent then
+                pcall(function() part:Destroy() end)
+            end
+        end
+        hitboxExtraPartes[plr] = nil
+    end
+end)
         
 -- NOCLIP
 noclipConn = nil
