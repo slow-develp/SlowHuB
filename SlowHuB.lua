@@ -150,23 +150,25 @@ function sameTeam(plr)
     local myChar = LocalPlayer.Character
     local theirChar = plr.Character
 
-    local ok1, result1 = pcall(function()
-        if plr.Team and LocalPlayer.Team and plr.Team == LocalPlayer.Team then
-            return true
+    -- 1) Team padrão do Roblox
+    pcall(function()
+        if plr.Team and LocalPlayer.Team then
+            if plr.Team == LocalPlayer.Team then return true end
+            if plr.Team.Name and LocalPlayer.Team.Name and plr.Team.Name == LocalPlayer.Team.Name then
+                return true
+            end
         end
-        return false
     end)
-    if ok1 and result1 then return true end
 
-    local ok2, result2 = pcall(function()
-        if plr.TeamColor and LocalPlayer.TeamColor and plr.TeamColor == LocalPlayer.TeamColor then
-            return true
+    -- 2) TeamColor padrão
+    pcall(function()
+        if plr.TeamColor and LocalPlayer.TeamColor then
+            if plr.TeamColor == LocalPlayer.TeamColor then return true end
         end
-        return false
     end)
-    if ok2 and result2 then return true end
 
-    local attrNames = {"Team", "team", "TeamName", "Gang", "Faction", "Squad"}
+    -- 3) Atributos no Player (mais nomes)
+    local attrNames = {"Team", "team", "TeamName", "teamname", "Gang", "gang", "Faction", "faction", "Squad", "squad", "Group", "group"}
     for _, attr in ipairs(attrNames) do
         local ok, mine, theirs = pcall(function()
             return LocalPlayer:GetAttribute(attr), plr:GetAttribute(attr)
@@ -176,6 +178,7 @@ function sameTeam(plr)
         end
     end
 
+    -- 4) Atributos no Character
     if myChar and theirChar then
         for _, attr in ipairs(attrNames) do
             local ok, mine, theirs = pcall(function()
@@ -184,6 +187,50 @@ function sameTeam(plr)
             if ok and mine ~= nil and theirs ~= nil and mine == theirs then
                 return true
             end
+        end
+    end
+
+    -- 5) Tag no nome ([RED], [BLUE], [T1], etc)
+    pcall(function()
+        local myName = string.upper(LocalPlayer.Name or "")
+        local theirName = string.upper(plr.Name or "")
+        local myDisplay = string.upper(LocalPlayer.DisplayName or "")
+        local theirDisplay = string.upper(plr.DisplayName or "")
+        local myTag = myName:match("%[(.-)%]") or myDisplay:match("%[(.-)%]")
+        local theirTag = theirName:match("%[(.-)%]") or theirDisplay:match("%[(.-)%]")
+        if myTag and theirTag and myTag ~= "" and myTag == theirTag then
+            return true
+        end
+    end)
+
+    -- 6) Cor do HRP (BrickColor)
+    if myChar and theirChar then
+        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
+        local theirHrp = theirChar:FindFirstChild("HumanoidRootPart")
+        if myHrp and theirHrp then
+            pcall(function()
+                if myHrp.BrickColor == theirHrp.BrickColor then
+                    return true
+                end
+            end)
+        end
+    end
+
+    -- 7) Cor do Torso/UpperTorso
+    if myChar and theirChar then
+        local myTorso = myChar:FindFirstChild("UpperTorso") or myChar:FindFirstChild("Torso")
+        local theirTorso = theirChar:FindFirstChild("UpperTorso") or theirChar:FindFirstChild("Torso")
+        if myTorso and theirTorso then
+            pcall(function()
+                local mc = myTorso.Color
+                local tc = theirTorso.Color
+                if mc and tc then
+                    local diff = (Vector3.new(mc.R, mc.G, mc.B) - Vector3.new(tc.R, tc.G, tc.B)).Magnitude
+                    if diff < 0.05 then
+                        return true
+                    end
+                end
+            end)
         end
     end
 
