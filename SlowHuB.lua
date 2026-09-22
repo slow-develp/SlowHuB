@@ -731,7 +731,7 @@ function getClosest()
     return closest
 end
 
--- AUTOSHOT FLUXO PVP
+-- ═══════════ AUTOSHOT UNIVERSAL ═══════════
 aimbotActive = false
 _ultimoTiro = 0
 _rajadaRestante = 0
@@ -742,51 +742,152 @@ COOLDOWN_RAJADA = 0.06
 COOLDOWN_NORMAL = 0.03
 TAMANHO_RAJADA = 6
 
-function atirarFluxo()
+-- Sistema de detecção de tiro universal
+atirarMetodoDetectado = nil
+atirarBotaoCache = nil
+
+function detectarMetodoTiro()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
-    if not pg then return false end
+    if not pg then return "tool" end
+
+    -- MÉTODO 1: Fluxo PvP (FireButton no ButtonsHUD/BotoesArma)
     local hud = pg:FindFirstChild("ButtonsHUD")
-    if not hud then return false end
-    local botoes = hud:FindFirstChild("BotoesArma")
-    if not botoes then return false end
-    local fb = botoes:FindFirstChild("FireButton")
-    if not fb then return false end
-
-    local ok, conns = pcall(getconnections, fb.InputBegan)
-    if not ok or not conns or #conns == 0 then return false end
-
-    local input = {
-        UserInputType = Enum.UserInputType.MouseButton1,
-        UserInputState = Enum.UserInputState.Begin,
-        Position = Vector3.zero,
-        Delta = Vector3.zero,
-        KeyCode = Enum.KeyCode.Unknown
-    }
-
-    for _, c in ipairs(conns) do
-        pcall(function()
-            if c.Function then c.Function(input) end
-        end)
-    end
-
-    local ok2, conns2 = pcall(getconnections, fb.InputEnded)
-    if ok2 and conns2 and #conns2 > 0 then
-        local inputEnd = {
-            UserInputType = Enum.UserInputType.MouseButton1,
-            UserInputState = Enum.UserInputState.End,
-            Position = Vector3.zero,
-            Delta = Vector3.zero,
-            KeyCode = Enum.KeyCode.Unknown
-        }
-        for _, c in ipairs(conns2) do
-            pcall(function()
-                if c.Function then c.Function(inputEnd) end
-            end)
+    if hud then
+        local botoes = hud:FindFirstChild("BotoesArma")
+        if botoes then
+            local fb = botoes:FindFirstChild("FireButton")
+            if fb then
+                local ok, conns = pcall(getconnections, fb.InputBegan)
+                if ok and conns and #conns > 0 then
+                    atirarBotaoCache = fb
+                    return "fluxo"
+                end
+            end
         end
     end
-    return true
+
+    -- MÉTODO 2: Procura botão de atirar pelo nome
+    for _, obj in ipairs(pg:GetDescendants()) do
+        if obj:IsA("TextButton") or obj:IsA("ImageButton") then
+            local n = string.lower(obj.Name)
+            if n:find("fire") or n:find("shoot") or n:find("atirar") 
+            or n:find("attack") or n:find("atacar") or n:find("tiro")
+            or n:find("gun") or n:find("arma") or n:find("hit") then
+                if obj.Visible and obj.AbsoluteSize.X > 0 then
+                    atirarBotaoCache = obj
+                    return "toque"
+                end
+            end
+        end
+    end
+
+    -- MÉTODO 3: Tool ativa (fallback)
+    local char = LocalPlayer.Character
+    if char then
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool then
+            return "tool"
+        end
+    end
+
+    return "tool"
 end
 
+function atirarFluxo()
+    local metodo = atirarMetodoDetectado or detectarMetodoTiro()
+    atirarMetodoDetectado = metodo
+
+    -- 🎯 MÉTODO FLUXO PVP: chama as connections direto
+    if metodo == "fluxo" then
+        local fb = atirarBotaoCache
+        if fb and fb.Parent then
+            local ok, conns = pcall(getconnections, fb.InputBegan)
+            if ok and conns and #conns > 0 then
+                local input = {
+                    UserInputType = Enum.UserInputType.MouseButton1,
+                    UserInputState = Enum.UserInputState.Begin,
+                    Position = Vector3.zero,
+                    Delta = Vector3.zero,
+                    KeyCode = Enum.KeyCode.Unknown
+                }
+                for _, c in ipairs(conns) do
+                    pcall(function()
+                        if c.Function then c.Function(input) end
+                    end)
+                end
+                local ok2, conns2 = pcall(getconnections, fb.InputEnded)
+                if ok2 and conns2 and #conns2 > 0 then
+                    local inputEnd = {
+                        UserInputType = Enum.UserInputType.MouseButton1,
+                        UserInputState = Enum.UserInputState.End,
+                        Position = Vector3.zero,
+                        Delta = Vector3.zero,
+                        KeyCode = Enum.KeyCode.Unknown
+                    }
+                    for _, c in ipairs(conns2) do
+                        pcall(function()
+                            if c.Function then c.Function(inputEnd) end
+                        end)
+                    end
+                end
+                return true
+            end
+        end
+        -- Se o botão cache morreu, redetecta
+        atirarMetodoDetectado = nil
+        atirarBotaoCache = nil
+    end
+
+    -- 🎯 MÉTODO TOQUE: simula clique no botão
+    if metodo == "toque" then
+        local btn = atirarBotaoCache
+        if btn and btn.Parent and btn.Visible then
+            local ok = pcall(function()
+                local vim = game:GetService("VirtualInputManager")
+                local pos = btn.AbsolutePosition
+                local size = btn.AbsoluteSize
+                local x = pos.X + size.X / 2
+                local y = pos.Y + size.Y / 2
+                vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
+                task.wait(0.02)
+                vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
+            end)
+            if ok then return true end
+        end
+        -- Se o botão cache morreu, redetecta
+        atirarMetodoDetectado = nil
+        atirarBotaoCache = nil
+    end
+
+    -- 🎯 MÉTODO 3: Tool:Activate()
+    local char = LocalPlayer.Character
+    if char then
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool then
+            pcall(function() tool:Activate() end)
+            return true
+        end
+    end
+
+    return false
+end
+
+-- 🔄 Redetecta o método a cada 5s (caso o botão mude)
+task.spawn(function()
+    while task.wait(5) do
+        if Config.Aimbot.Enabled and Config.Aimbot.AutoShot then
+            if atirarBotaoCache and not atirarBotaoCache.Parent then
+                atirarMetodoDetectado = nil
+                atirarBotaoCache = nil
+            end
+            if not atirarMetodoDetectado then
+                detectarMetodoTiro()
+            end
+        end
+    end
+end)
+
+-- ═══════════ MUNIÇÃO / RELOAD ═══════════
 function getMunicao()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return nil, nil end
@@ -833,6 +934,7 @@ function recarregarArma()
     return true
 end
 
+-- ═══════════ AIMBOT ═══════════
 function startAimbot()
     if aimbotActive then return end
     aimbotActive = true
@@ -891,6 +993,7 @@ function startAimbot()
     end)
 end
 
+-- Auto Reload
 _ultimoReloadAuto = 0
 task.spawn(function()
     while task.wait(0.25) do
@@ -907,6 +1010,120 @@ task.spawn(function()
         end
     end
 end)
+
+-- ═══════════ HITBOX EXPANDER (MELHORADO) ═══════════
+hitboxConn = nil
+hitboxOriginalSizes = {}
+
+function restaurarHitboxes()
+    for plr, data in pairs(hitboxOriginalSizes) do
+        if plr.Character and type(data) == "table" then
+            for part, orig in pairs(data) do
+                if part and part.Parent then
+                    pcall(function()
+                        if part:IsA("BasePart") then
+                            part.Size = orig.Size
+                            part.Transparency = orig.Transparency
+                            part.Material = orig.Material
+                            part.BrickColor = orig.BrickColor
+                            part.CanCollide = orig.CanCollide
+                        end
+                    end)
+                end
+            end
+        end
+    end
+    hitboxOriginalSizes = {}
+end
+
+function aplicarHitboxEmPlayer(plr)
+    if plr == LocalPlayer then return end
+    local char = plr.Character
+    if not char then return end
+
+    if not hitboxOriginalSizes[plr] then
+        hitboxOriginalSizes[plr] = {}
+    end
+
+    local size = Config.Hitbox.Size
+
+    -- Expande HRP + Head + Torso + UpperTorso + LowerTorso
+    local partes = {
+        char:FindFirstChild("HumanoidRootPart"),
+        char:FindFirstChild("Head"),
+        char:FindFirstChild("UpperTorso"),
+        char:FindFirstChild("LowerTorso"),
+        char:FindFirstChild("Torso"),
+    }
+
+    for _, part in ipairs(partes) do
+        if part and part:IsA("BasePart") then
+            if not hitboxOriginalSizes[plr][part] then
+                hitboxOriginalSizes[plr][part] = {
+                    Size = part.Size,
+                    Transparency = part.Transparency,
+                    Material = part.Material,
+                    BrickColor = part.BrickColor,
+                    CanCollide = part.CanCollide,
+                }
+            end
+
+            pcall(function()
+                part.Size = Vector3.new(size, size, size)
+                part.Transparency = 0.7
+                part.Material = Enum.Material.Neon
+                part.BrickColor = BrickColor.new("Really blue")
+                part.CanCollide = false
+            end)
+        end
+    end
+end
+
+function setHitbox(state)
+    if hitboxConn then
+        hitboxConn:Disconnect()
+        hitboxConn = nil
+    end
+
+    if not state then
+        restaurarHitboxes()
+        return
+    end
+
+    hitboxConn = RunService.RenderStepped:Connect(function()
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                aplicarHitboxEmPlayer(plr)
+            end
+        end
+    end)
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if Config.Hitbox.Enabled then
+        task.wait(1)
+        aplicarHitboxEmPlayer(plr)
+    end
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    hitboxOriginalSizes[plr] = nil
+end)
+
+-- ═══════════ TRACK PLAYERS ═══════════
+function trackPlayer(plr)
+    if plr == LocalPlayer then return end
+    createESP(plr)
+end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    trackPlayer(plr)
+end
+
+Players.PlayerAdded:Connect(trackPlayer)
+Players.PlayerRemoving:Connect(function(plr)
+    destroyESP(plr)
+end)                 
 
 -- ═══════════ HITBOX EXPANDER ═══════════
 hitboxConn = nil
