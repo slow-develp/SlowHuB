@@ -700,12 +700,8 @@ function getClosest()
     for _, plr in ipairs(Players:GetPlayers()) do
         if isValidTarget(plr, Config.Aimbot.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
-            if char and hum and hrp 
-                and char.Parent 
-                and plr.Parent
-                and hum.Health > 0 
-                and hum:GetState() ~= Enum.HumanoidStateType.Dead then
-                
+            if char and hrp and char.Parent and plr.Parent then
+                -- 🔑 NÃO checa Health nem State (alguns jogos bugam)
                 local passWallCheck = true
                 if Config.Aimbot.WallCheck then
                     passWallCheck = hasLineOfSight(char)
@@ -728,6 +724,7 @@ function getClosest()
     end
     return closest
 end
+
 -- AUTOSHOT FLUXO PVP
 aimbotActive = false
 _ultimoTiro = 0
