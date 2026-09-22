@@ -955,69 +955,67 @@ task.spawn(function()
     end
 end)
 
--- ═══════════ HITBOX EXPANDER (até 500) ═══════════
+-- ═══════════ HITBOX UNIVERSAL (quadrado azul visível) ═══════════
 hitboxConn = nil
-hitboxOriginalSizes = {}
+hitboxExtraPartes = {}
 
 function restaurarHitboxes()
-    for plr, data in pairs(hitboxOriginalSizes) do
-        if plr.Character and type(data) == "table" then
-            for part, orig in pairs(data) do
-                if part and part.Parent then
-                    pcall(function()
-                        if part:IsA("BasePart") then
-                            part.Size = orig.Size
-                            part.Transparency = orig.Transparency
-                            part.Material = orig.Material
-                            part.BrickColor = orig.BrickColor
-                            part.CanCollide = orig.CanCollide
-                        end
-                    end)
-                end
+    for plr, partes in pairs(hitboxExtraPartes) do
+        for _, part in ipairs(partes) do
+            if part and part.Parent then
+                pcall(function() part:Destroy() end)
             end
         end
     end
-    hitboxOriginalSizes = {}
+    hitboxExtraPartes = {}
 end
 
 function aplicarHitboxEmPlayer(plr)
     if plr == LocalPlayer then return end
     local char = plr.Character
     if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
-    if not hitboxOriginalSizes[plr] then
-        hitboxOriginalSizes[plr] = {}
+    if not hitboxExtraPartes[plr] then
+        hitboxExtraPartes[plr] = {}
     end
 
-    local size = Config.Hitbox.Size
+    local size = math.max(Config.Hitbox.Size, 2)
 
-    local partes = {
-        char:FindFirstChild("HumanoidRootPart"),
-        char:FindFirstChild("Head"),
-        char:FindFirstChild("UpperTorso"),
-        char:FindFirstChild("LowerTorso"),
-        char:FindFirstChild("Torso"),
-    }
+    -- Cria o quadrado azul visível 1x por player
+    if #hitboxExtraPartes[plr] == 0 then
+        pcall(function()
+            local extraPart = Instance.new("Part")
+            extraPart.Name = "SlowHubHitbox"
+            extraPart.Size = Vector3.new(size, size, size)
+            extraPart.Transparency = 0.7                    -- 🔑 semi-transparente
+            extraPart.Color = Color3.fromRGB(80, 180, 255)  -- 🔑 azul neon
+            extraPart.Material = Enum.Material.Neon         -- 🔑 brilha
+            extraPart.CanCollide = false                    -- 🔑 não empurra
+            extraPart.CanTouch = true                       -- 🔑 detecta toque
+            extraPart.CanQuery = true                       -- 🔑 detecta raycast
+            extraPart.Massless = true
+            extraPart.Anchored = false
+            extraPart.Parent = char
 
-    for _, part in ipairs(partes) do
-        if part and part:IsA("BasePart") then
-            if not hitboxOriginalSizes[plr][part] then
-                hitboxOriginalSizes[plr][part] = {
-                    Size = part.Size,
-                    Transparency = part.Transparency,
-                    Material = part.Material,
-                    BrickColor = part.BrickColor,
-                    CanCollide = part.CanCollide,
-                }
+            -- Solda no HRP (segue o player)
+            local weld = Instance.new("WeldConstraint")
+            weld.Part0 = extraPart
+            weld.Part1 = hrp
+            weld.Parent = extraPart
+            extraPart.CFrame = hrp.CFrame
+
+            table.insert(hitboxExtraPartes[plr], extraPart)
+        end)
+    else
+        -- Atualiza tamanho se já existe
+        for _, part in ipairs(hitboxExtraPartes[plr]) do
+            if part and part.Parent then
+                pcall(function()
+                    part.Size = Vector3.new(size, size, size)
+                end)
             end
-
-            pcall(function()
-                part.Size = Vector3.new(size, size, size)
-                part.Transparency = 0.7
-                part.Material = Enum.Material.Neon
-                part.BrickColor = BrickColor.new("Really blue")
-                part.CanCollide = false
-            end)
         end
     end
 end
@@ -1033,39 +1031,47 @@ function setHitbox(state)
         return
     end
 
-    hitboxConn = RunService.RenderStepped:Connect(function()
+    -- Aplica imediatamente
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            pcall(function() aplicarHitboxEmPlayer(plr) end)
+        end
+    end
+
+    -- Loop pra manter atualizado (Heartbeat = antes da física, melhor compatibilidade)
+    hitboxConn = RunService.Heartbeat:Connect(function()
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer then
-                aplicarHitboxEmPlayer(plr)
+                pcall(function() aplicarHitboxEmPlayer(plr) end)
             end
         end
     end)
-end
 
-Players.PlayerAdded:Connect(function(plr)
-    if Config.Hitbox.Enabled then
-        task.wait(1)
-        aplicarHitboxEmPlayer(plr)
+    -- Re-aplica quando alguém respawnar
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            plr.CharacterAdded:Connect(function()
+                if Config.Hitbox.Enabled then
+                    task.wait(0.5)
+                    hitboxExtraPartes[plr] = {}
+                    aplicarHitboxEmPlayer(plr)
+                end
+            end)
+        end
     end
-end)
 
-Players.PlayerRemoving:Connect(function(plr)
-    hitboxOriginalSizes[plr] = nil
-end)
-
-function trackPlayer(plr)
-    if plr == LocalPlayer then return end
-    createESP(plr)
-end
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    trackPlayer(plr)
-end
-
-Players.PlayerAdded:Connect(trackPlayer)
-Players.PlayerRemoving:Connect(function(plr)
-    destroyESP(plr)
-end)
+    -- Re-aplica quando alguém entrar no servidor
+    Players.PlayerAdded:Connect(function(plr)
+        if Config.Hitbox.Enabled and plr ~= LocalPlayer then
+            plr.CharacterAdded:Connect(function()
+                task.wait(0.5)
+                hitboxExtraPartes[plr] = {}
+                aplicarHitboxEmPlayer(plr)
+            end)
+        end
+    end)
+end        
+        
 -- NOCLIP
 noclipConn = nil
 function setNoclip(state)
