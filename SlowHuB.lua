@@ -989,6 +989,51 @@ function aplicarHitboxEmPlayer(plr)
             local extraPart = Instance.new("Part")
             extraPart.Name = "SlowHubHitbox"
             extraPart.Size = Vector3.new(size, size, size)
+            extraPart.Transparency = 0.7
+            extraPart.Color = Color3.fromRGB(80, 180, 255)
+            extraPart.Material = Enum.Material.Neon
+            extraPart.CanCollide = false
+            extraPart.CanTouch = true
+            extraPart.CanQuery = true
+            extraPart.Massless = true
+            extraPart.Anchored = false
+            extraPart.TopSurface = Enum.SurfaceType.Smooth
+            extraPart.BottomSurface = Enum.SurfaceType.Smooth
+
+            -- 🔑 SETA O CFrame ANTES DE PARENTEAR (senão fica em 0,0,0)
+            extraPart.CFrame = hrp.CFrame
+
+            -- 🔑 PARENTEIA PRIMEIRO
+            extraPart.Parent = char
+
+            -- 🔑 USA WELD (não WeldConstraint) — muito mais confiável
+            local weld = Instance.new("Weld")
+            weld.Part0 = hrp        -- HRP é o "dono"
+            weld.Part1 = extraPart  -- a peça segue o HRP
+            weld.C0 = CFrame.new(0, 0, 0)
+            weld.C1 = CFrame.new(0, 0, 0)
+            weld.Parent = extraPart
+
+            table.insert(hitboxExtraPartes[plr], extraPart)
+        end)
+    else
+        -- Atualiza tamanho se já existe
+        for _, part in ipairs(hitboxExtraPartes[plr]) do
+            if part and part.Parent then
+                pcall(function()
+                    part.Size = Vector3.new(size, size, size)
+                end)
+            end
+        end
+    end
+end
+
+    -- Cria o quadrado azul visível 1x por player
+    if #hitboxExtraPartes[plr] == 0 then
+        pcall(function()
+            local extraPart = Instance.new("Part")
+            extraPart.Name = "SlowHubHitbox"
+            extraPart.Size = Vector3.new(size, size, size)
             extraPart.Transparency = 0.7                    -- 🔑 semi-transparente
             extraPart.Color = Color3.fromRGB(80, 180, 255)  -- 🔑 azul neon
             extraPart.Material = Enum.Material.Neon         -- 🔑 brilha
