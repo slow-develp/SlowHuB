@@ -837,53 +837,50 @@ function startAimbot()
         while Config.Aimbot.Enabled do
             local target = getClosest()
             if target and target.Parent then
-                local targetChar = target:FindFirstAncestorOfClass("Model")
-                local targetHum = targetChar and targetChar:FindFirstChildOfClass("Humanoid")
-                if targetHum and targetHum.Health > 0 and targetHum:GetState() ~= Enum.HumanoidStateType.Dead then
+                local camPos = Camera.CFrame.Position
+                local aimPos = target.Position
 
-                    if target ~= _ultimoAlvo then
-                        _ultimoAlvo = target
-                        _rajadaRestante = 0
-                        _ultimoTiro = 0
+                if (aimPos - camPos).Magnitude > 0.1 then
+                    local lookAt = CFrame.new(camPos, aimPos)
+                    local smooth = math.clamp(Config.Aimbot.Smoothness or 0.25, 0.05, 1)
+                    Camera.CFrame = Camera.CFrame:Lerp(lookAt, smooth)
+                end
+
+                RunService.RenderStepped:Wait()
+
+                -- Re-mira antes do tiro
+                if target and target.Parent then
+                    local camPos2 = Camera.CFrame.Position
+                    local aimPos2 = target.Position
+                    if (aimPos2 - camPos2).Magnitude > 0.1 then
+                        Camera.CFrame = CFrame.new(camPos2, aimPos2)
                     end
+                end
 
-                    local goal = CFrame.new(Camera.CFrame.Position, target.Position)
-                    Camera.CFrame = goal
-
-                    if Config.Aimbot.AutoShot then
-                        RunService.RenderStepped:Wait()
-                        local goal2 = CFrame.new(Camera.CFrame.Position, target.Position)
-                        Camera.CFrame = goal2
-
-                        local isHead = (target.Name == "Head")
-
-                        if isHead then
-                            if tick() - _ultimoTiro > COOLDOWN_HEAD then
+                if Config.Aimbot.AutoShot then
+                    local isHead = (target.Name == "Head")
+                    if isHead then
+                        if tick() - _ultimoTiro > COOLDOWN_HEAD then
+                            _ultimoTiro = tick()
+                            atirarFluxo()
+                        end
+                        _rajadaRestante = 0
+                    else
+                        if _rajadaRestante > 0 then
+                            if tick() - _ultimoTiro > COOLDOWN_RAJADA then
                                 _ultimoTiro = tick()
                                 atirarFluxo()
+                                _rajadaRestante = _rajadaRestante - 1
                             end
-                            _rajadaRestante = 0
                         else
-                            if _rajadaRestante > 0 then
-                                if tick() - _ultimoTiro > COOLDOWN_RAJADA then
-                                    _ultimoTiro = tick()
-                                    atirarFluxo()
-                                    _rajadaRestante = _rajadaRestante - 1
-                                end
-                            else
-                                if tick() - _ultimoTiro > COOLDOWN_NORMAL then
-                                    _ultimoTiro = tick()
-                                    atirarFluxo()
-                                    _rajadaRestante = TAMANHO_RAJADA - 1
-                                end
+                            if tick() - _ultimoTiro > COOLDOWN_NORMAL then
+                                _ultimoTiro = tick()
+                                atirarFluxo()
+                                _rajadaRestante = TAMANHO_RAJADA - 1
                             end
                         end
                     end
-
                 end
-            else
-                _rajadaRestante = 0
-                _ultimoAlvo = nil
             end
             RunService.RenderStepped:Wait()
         end
