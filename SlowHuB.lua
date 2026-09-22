@@ -77,7 +77,7 @@ getgenv().SlowHubStartTime = tick()
 Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(80,200,255), HighlightColor=Color3.fromRGB(60,220,255), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false, ShowLines=false},
     Aimbot = {Enabled=false, FOVEnabled=false, FOVColor=Color3.fromRGB(80,180,255), FOVSize=250, Target="Head", TeamCheck=false, Smoothness=0.35, AutoShot=false, WallCheck=false, AutoReload=false},
-    Hitbox = {Enabled=false, Size=3, Color=Color3.fromRGB(80,180,255), ShowBox=false},
+    Hitbox = {Enabled=false, Size=5, Color=Color3.fromRGB(80,180,255), ShowBox=false},
     Noclip = {Enabled=false},
     Speed = {Enabled=false, Value=32},
     InfiniteJump = {Enabled=false},
@@ -147,28 +147,23 @@ function sameTeam(plr)
     if not plr or not LocalPlayer then return false end
     if plr == LocalPlayer then return true end
 
-    local myChar = LocalPlayer.Character
-    local theirChar = plr.Character
-
-    -- 1) Team padrão do Roblox
-    pcall(function()
-        if plr.Team and LocalPlayer.Team then
-            if plr.Team == LocalPlayer.Team then return true end
-            if plr.Team.Name and LocalPlayer.Team.Name and plr.Team.Name == LocalPlayer.Team.Name then
-                return true
-            end
+    local ok1, result1 = pcall(function()
+        if plr.Team and LocalPlayer.Team and plr.Team == LocalPlayer.Team then
+            return true
         end
+        return false
     end)
+    if ok1 and result1 then return true end
 
-    -- 2) TeamColor padrão
-    pcall(function()
-        if plr.TeamColor and LocalPlayer.TeamColor then
-            if plr.TeamColor == LocalPlayer.TeamColor then return true end
+    local ok2, result2 = pcall(function()
+        if plr.TeamColor and LocalPlayer.TeamColor and plr.TeamColor == LocalPlayer.TeamColor then
+            return true
         end
+        return false
     end)
+    if ok2 and result2 then return true end
 
-    -- 3) Atributos no Player (mais nomes)
-    local attrNames = {"Team", "team", "TeamName", "teamname", "Gang", "gang", "Faction", "faction", "Squad", "squad", "Group", "group"}
+    local attrNames = {"Team", "team", "TeamName", "Gang", "Faction", "Squad"}
     for _, attr in ipairs(attrNames) do
         local ok, mine, theirs = pcall(function()
             return LocalPlayer:GetAttribute(attr), plr:GetAttribute(attr)
@@ -178,7 +173,8 @@ function sameTeam(plr)
         end
     end
 
-    -- 4) Atributos no Character
+    local myChar = LocalPlayer.Character
+    local theirChar = plr.Character
     if myChar and theirChar then
         for _, attr in ipairs(attrNames) do
             local ok, mine, theirs = pcall(function()
@@ -187,50 +183,6 @@ function sameTeam(plr)
             if ok and mine ~= nil and theirs ~= nil and mine == theirs then
                 return true
             end
-        end
-    end
-
-    -- 5) Tag no nome ([RED], [BLUE], [T1], etc)
-    pcall(function()
-        local myName = string.upper(LocalPlayer.Name or "")
-        local theirName = string.upper(plr.Name or "")
-        local myDisplay = string.upper(LocalPlayer.DisplayName or "")
-        local theirDisplay = string.upper(plr.DisplayName or "")
-        local myTag = myName:match("%[(.-)%]") or myDisplay:match("%[(.-)%]")
-        local theirTag = theirName:match("%[(.-)%]") or theirDisplay:match("%[(.-)%]")
-        if myTag and theirTag and myTag ~= "" and myTag == theirTag then
-            return true
-        end
-    end)
-
-    -- 6) Cor do HRP (BrickColor)
-    if myChar and theirChar then
-        local myHrp = myChar:FindFirstChild("HumanoidRootPart")
-        local theirHrp = theirChar:FindFirstChild("HumanoidRootPart")
-        if myHrp and theirHrp then
-            pcall(function()
-                if myHrp.BrickColor == theirHrp.BrickColor then
-                    return true
-                end
-            end)
-        end
-    end
-
-    -- 7) Cor do Torso/UpperTorso
-    if myChar and theirChar then
-        local myTorso = myChar:FindFirstChild("UpperTorso") or myChar:FindFirstChild("Torso")
-        local theirTorso = theirChar:FindFirstChild("UpperTorso") or theirChar:FindFirstChild("Torso")
-        if myTorso and theirTorso then
-            pcall(function()
-                local mc = myTorso.Color
-                local tc = theirTorso.Color
-                if mc and tc then
-                    local diff = (Vector3.new(mc.R, mc.G, mc.B) - Vector3.new(tc.R, tc.G, tc.B)).Magnitude
-                    if diff < 0.05 then
-                        return true
-                    end
-                end
-            end)
         end
     end
 
@@ -247,8 +199,6 @@ function isValidTarget(plr, teamcheck)
 
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hum then return false end
-    if hum.Health <= 0 then return false end
-    if hum:GetState() == Enum.HumanoidStateType.Dead then return false end
 
     if char:FindFirstChildOfClass("ForceField") then return false end
 
@@ -406,7 +356,22 @@ function createESP(plr)
     d.Line = line
     espData[plr] = d
 end
-                                                                        local hpStat = ls:FindFirstChild("Health") or ls:FindFirstChild("HP") or ls:FindFirstChild("Vida")
+
+function hideESP(d)
+    if d.Box then d.Box.Visible = false end
+    if d.Line then d.Line.Visible = false end
+    if d.Name then d.Name.Visible = false end
+    if d.Dist then d.Dist.Visible = false end
+    if d.HpBg then d.HpBg.Visible = false end
+    if d.Stick then
+        if d.Stick.Body then d.Stick.Body.Visible = false end
+        if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
+        if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
+        if d.Stick.LegL then d.Stick.LegL.Visible = false end
+        if d.Stick.LegR then d.Stick.LegR.Visible = false end
+    end
+end
+
 function updateESP()
     if not Config.ESP.Enabled then
         for _, d in pairs(espData) do hideESP(d) end
@@ -417,7 +382,7 @@ function updateESP()
     local localHrp = localChar and localChar:FindFirstChild("HumanoidRootPart")
     local vp = Camera.ViewportSize
 
-    -- Cria ESP pra todos os players (mesmo os que entraram antes)
+    -- Cria ESP pra todos os players (mesmo os que entraram antes do script)
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer and not espData[plr] then
             createESP(plr)
@@ -440,7 +405,7 @@ function updateESP()
                     local headPos, headOn = Camera:WorldToViewportPoint(head.Position)
                     local footPos, footOn = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
 
-                    -- 🔑 CORREÇÃO: só mostra se estiver À FRENTE da câmera e dentro da tela
+                    -- Só mostra se estiver à FRENTE e dentro da tela
                     if headOn and footOn and headPos.Z > 0 and footPos.Z > 0 then
                         local dentroTela = headPos.X > 0 and headPos.X < vp.X 
                                        and headPos.Y > 0 and headPos.Y < vp.Y
@@ -579,6 +544,7 @@ function updateESP()
                             end
 
                             if Config.ESP.ShowHighlight and d.Stick then
+                                -- Limpa antes de desenhar
                                 if d.Stick.Body then d.Stick.Body.Visible = false end
                                 if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
                                 if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
@@ -634,12 +600,6 @@ function updateESP()
                                 desenhaLinha(d.Stick.ArmR, pOmbroD, pMaoD, 2)
                                 desenhaLinha(d.Stick.LegL, pQuadril, pPeE, 2)
                                 desenhaLinha(d.Stick.LegR, pQuadril, pPeD, 2)
-                            elseif d.Stick then
-                                if d.Stick.Body then d.Stick.Body.Visible = false end
-                                if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
-                                if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
-                                if d.Stick.LegL then d.Stick.LegL.Visible = false end
-                                if d.Stick.LegR then d.Stick.LegR.Visible = false end
                             end
                         else
                             hideESP(d)
@@ -657,7 +617,7 @@ function updateESP()
             hideESP(d)
         end
     end
-end                                                               
+end
 
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
@@ -707,16 +667,15 @@ function getClosest()
         if isValidTarget(plr, Config.Aimbot.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
             if char and hrp and char.Parent and plr.Parent then
-                -- 🔑 NÃO checa Health nem State (alguns jogos bugam)
                 local passWallCheck = true
                 if Config.Aimbot.WallCheck then
                     passWallCheck = hasLineOfSight(char)
                 end
                 if passWallCheck then
                     local part = (Config.Aimbot.Target == "Head") and char:FindFirstChild("Head") or hrp
-                    if part and part.Parent then
+                if part and part.Parent then
                         local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                        if onScreen then
+                        if onScreen and pos.Z > 0 then
                             local screenPos = Vector2.new(pos.X, pos.Y)
                             local dist = (screenPos - center).Magnitude
                             if dist <= Config.Aimbot.FOVSize and dist < closestDist then
@@ -730,7 +689,6 @@ function getClosest()
     end
     return closest
 end
-
 -- ═══════════ AUTOSHOT UNIVERSAL ═══════════
 aimbotActive = false
 _ultimoTiro = 0
@@ -742,7 +700,6 @@ COOLDOWN_RAJADA = 0.06
 COOLDOWN_NORMAL = 0.03
 TAMANHO_RAJADA = 6
 
--- Sistema de detecção de tiro universal
 atirarMetodoDetectado = nil
 atirarBotaoCache = nil
 
@@ -750,7 +707,6 @@ function detectarMetodoTiro()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return "tool" end
 
-    -- MÉTODO 1: Fluxo PvP (FireButton no ButtonsHUD/BotoesArma)
     local hud = pg:FindFirstChild("ButtonsHUD")
     if hud then
         local botoes = hud:FindFirstChild("BotoesArma")
@@ -766,13 +722,12 @@ function detectarMetodoTiro()
         end
     end
 
-    -- MÉTODO 2: Procura botão de atirar pelo nome
     for _, obj in ipairs(pg:GetDescendants()) do
         if obj:IsA("TextButton") or obj:IsA("ImageButton") then
             local n = string.lower(obj.Name)
             if n:find("fire") or n:find("shoot") or n:find("atirar") 
             or n:find("attack") or n:find("atacar") or n:find("tiro")
-            or n:find("gun") or n:find("arma") or n:find("hit") then
+            or n:find("gun") or n:find("arma") then
                 if obj.Visible and obj.AbsoluteSize.X > 0 then
                     atirarBotaoCache = obj
                     return "toque"
@@ -781,13 +736,10 @@ function detectarMetodoTiro()
         end
     end
 
-    -- MÉTODO 3: Tool ativa (fallback)
     local char = LocalPlayer.Character
     if char then
         local tool = char:FindFirstChildOfClass("Tool")
-        if tool then
-            return "tool"
-        end
+        if tool then return "tool" end
     end
 
     return "tool"
@@ -797,7 +749,6 @@ function atirarFluxo()
     local metodo = atirarMetodoDetectado or detectarMetodoTiro()
     atirarMetodoDetectado = metodo
 
-    -- 🎯 MÉTODO FLUXO PVP: chama as connections direto
     if metodo == "fluxo" then
         local fb = atirarBotaoCache
         if fb and fb.Parent then
@@ -833,12 +784,10 @@ function atirarFluxo()
                 return true
             end
         end
-        -- Se o botão cache morreu, redetecta
         atirarMetodoDetectado = nil
         atirarBotaoCache = nil
     end
 
-    -- 🎯 MÉTODO TOQUE: simula clique no botão
     if metodo == "toque" then
         local btn = atirarBotaoCache
         if btn and btn.Parent and btn.Visible then
@@ -854,12 +803,10 @@ function atirarFluxo()
             end)
             if ok then return true end
         end
-        -- Se o botão cache morreu, redetecta
         atirarMetodoDetectado = nil
         atirarBotaoCache = nil
     end
 
-    -- 🎯 MÉTODO 3: Tool:Activate()
     local char = LocalPlayer.Character
     if char then
         local tool = char:FindFirstChildOfClass("Tool")
@@ -872,7 +819,6 @@ function atirarFluxo()
     return false
 end
 
--- 🔄 Redetecta o método a cada 5s (caso o botão mude)
 task.spawn(function()
     while task.wait(5) do
         if Config.Aimbot.Enabled and Config.Aimbot.AutoShot then
@@ -953,7 +899,6 @@ function startAimbot()
 
                 RunService.RenderStepped:Wait()
 
-                -- Re-mira antes do tiro
                 if target and target.Parent then
                     local camPos2 = Camera.CFrame.Position
                     local aimPos2 = target.Position
@@ -993,7 +938,6 @@ function startAimbot()
     end)
 end
 
--- Auto Reload
 _ultimoReloadAuto = 0
 task.spawn(function()
     while task.wait(0.25) do
@@ -1011,7 +955,7 @@ task.spawn(function()
     end
 end)
 
--- ═══════════ HITBOX EXPANDER (MELHORADO) ═══════════
+-- ═══════════ HITBOX EXPANDER (até 500) ═══════════
 hitboxConn = nil
 hitboxOriginalSizes = {}
 
@@ -1047,7 +991,6 @@ function aplicarHitboxEmPlayer(plr)
 
     local size = Config.Hitbox.Size
 
-    -- Expande HRP + Head + Torso + UpperTorso + LowerTorso
     local partes = {
         char:FindFirstChild("HumanoidRootPart"),
         char:FindFirstChild("Head"),
@@ -1077,95 +1020,6 @@ function aplicarHitboxEmPlayer(plr)
             end)
         end
     end
-end
-
-function setHitbox(state)
-    if hitboxConn then
-        hitboxConn:Disconnect()
-        hitboxConn = nil
-    end
-
-    if not state then
-        restaurarHitboxes()
-        return
-    end
-
-    hitboxConn = RunService.RenderStepped:Connect(function()
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                aplicarHitboxEmPlayer(plr)
-            end
-        end
-    end)
-end
-
-Players.PlayerAdded:Connect(function(plr)
-    if Config.Hitbox.Enabled then
-        task.wait(1)
-        aplicarHitboxEmPlayer(plr)
-    end
-end)
-
-Players.PlayerRemoving:Connect(function(plr)
-    hitboxOriginalSizes[plr] = nil
-end)
-
--- ═══════════ TRACK PLAYERS ═══════════
-function trackPlayer(plr)
-    if plr == LocalPlayer then return end
-    createESP(plr)
-end
-
-for _, plr in ipairs(Players:GetPlayers()) do
-    trackPlayer(plr)
-end
-
-Players.PlayerAdded:Connect(trackPlayer)
-Players.PlayerRemoving:Connect(function(plr)
-    destroyESP(plr)
-end)                 
-
--- ═══════════ HITBOX EXPANDER ═══════════
-hitboxConn = nil
-hitboxOriginalSizes = {}
-
-function restaurarHitboxes()
-    for plr, sizeOriginal in pairs(hitboxOriginalSizes) do
-        if plr.Character then
-            local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                pcall(function()
-                    hrp.Size = sizeOriginal
-                    hrp.Transparency = 1
-                    hrp.Material = Enum.Material.Plastic
-                    hrp.BrickColor = BrickColor.new("Medium stone grey")
-                    hrp.CanCollide = false
-                end)
-            end
-        end
-    end
-    hitboxOriginalSizes = {}
-end
-
-function aplicarHitboxEmPlayer(plr)
-    if plr == LocalPlayer then return end
-    local char = plr.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if not hitboxOriginalSizes[plr] then
-        hitboxOriginalSizes[plr] = hrp.Size
-    end
-
-    local size = Config.Hitbox.Size
-    pcall(function()
-        hrp.Size = Vector3.new(size, size, size)
-        hrp.Transparency = 0.7
-        hrp.Material = Enum.Material.Neon
-        hrp.BrickColor = BrickColor.new("Really blue")
-        hrp.CanCollide = false
-    end)
 end
 
 function setHitbox(state)
@@ -1464,13 +1318,14 @@ function setAntiFling(state)
         local hrp = char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
         local vel = hrp.AssemblyLinearVelocity
-        if vel.Magnitude > 200 then
-            hrp.AssemblyLinearVelocity = vel.Unit * 50
+        if vel.Magnitude > 150 then
+            hrp.AssemblyLinearVelocity = vel.Unit * 30
+            hrp.RotVelocity = Vector3.zero
         end
     end)
 end
 
--- ANTI-VOID (MELHORADO — volta pra última posição segura)
+-- ANTI-VOID (volta pra última posição segura)
 antiVoidConn = nil
 antiVoidPos = nil
 
@@ -3670,7 +3525,7 @@ makeColorPalette(visualPage, 480, "🎯 Cor do FOV", Config.Aimbot.FOVColor, fun
     Config.Aimbot.FOVColor = cor
 end)
 
--- ═══════════ PÁGINA HITBOX ═══════════
+-- ═══════════ PÁGINA HITBOX (até 500) ═══════════
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Aumenta o HRP dos inimigos")
 
@@ -3682,12 +3537,12 @@ makeToggle(hbCard, Config.Hitbox.Enabled, function(s)
 end)
 
 hbSizeCard = makeCard(hitboxPage, 94, 32)
-makeLabel(hbSizeCard, "Tamanho", 10, 150)
-hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 50, function(txt)
+makeLabel(hbSizeCard, "Tamanho (1 - 500)", 10, 150)
+hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 60, function(txt)
     local n = tonumber(txt)
-    if n then Config.Hitbox.Size = math.clamp(n, 1, 20) end
+    if n then Config.Hitbox.Size = math.clamp(n, 1, 500) end
 end)
-hbSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
+hbSizeInput.Position = UDim2.new(1, -80, 0.5, -12)
 
 -- ═══════════ PÁGINA MIRA ═══════════
 miraPage = createPage("Mira")
@@ -4393,6 +4248,7 @@ function resetEverything()
     if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end) antiAfkConn = nil end
     if fovFrame then fovFrame.Visible = false end
     aimbotActive = false
+    aimbotLocked = nil
 end
 
 confirmCloseBtn.MouseButton1Click:Connect(function()
