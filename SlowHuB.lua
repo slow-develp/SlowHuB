@@ -360,28 +360,30 @@ function createESP(plr)
     espData[plr] = d
 end
 
-function hideESP(d)
-    if d.Box then d.Box.Visible = false end
-    if d.Line then d.Line.Visible = false end
-    if d.Name then d.Name.Visible = false end
-    if d.Dist then d.Dist.Visible = false end
-    if d.HpBg then d.HpBg.Visible = false end
-    if d.Stick then
-        if d.Stick.Body then d.Stick.Body.Visible = false end
-        if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
-        if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
-        if d.Stick.LegL then d.Stick.LegL.Visible = false end
-        if d.Stick.LegR then d.Stick.LegR.Visible = false end
-    end
-end
-
 function updateESP()
     if not Config.ESP.Enabled then
         for _, d in pairs(espData) do hideESP(d) end
         return
     end
+
     local localChar = LocalPlayer.Character
     local localHrp = localChar and localChar:FindFirstChild("HumanoidRootPart")
+
+    -- 🔑 CRIA ESP PRA TODOS OS PLAYERS (mesmo os que entraram antes do script)
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and not espData[plr] then
+            createESP(plr)
+        end
+    end
+
+    -- 🔑 LIMPA PLAYERS QUE SAÍRAM DO JOGO
+    for plr, d in pairs(espData) do
+        if not plr.Parent then
+            destroyESP(plr)
+        end
+    end
+
+    -- 🎯 RODA O ESP
     for plr, d in pairs(espData) do
         if isValidTarget(plr, Config.ESP.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
@@ -421,12 +423,17 @@ function updateESP()
                             d.Dist.Text = string.format("%dm", math.floor(dist))
                             d.Dist.Position = UDim2.new(0, x, 0, y + h + 2)
                             d.Dist.Size = UDim2.new(0, w, 0, 12)
-                            d.Dist.TextColor3 = Config.ESP.Color
+                            if dist < 30 then
+                                d.Dist.TextColor3 = Color3.fromRGB(100, 255, 100)
+                            elseif dist < 80 then
+                                d.Dist.TextColor3 = Color3.fromRGB(255, 220, 100)
+                            else
+                                d.Dist.TextColor3 = Color3.fromRGB(255, 100, 100)
+                            end
                         else
                             d.Dist.Visible = false
                         end
 
-                        -- 🩸 HP com 4 fontes (MELHORIA)
                         if Config.ESP.ShowHealth then
                             d.HpBg.Visible = true
                             d.HpBg.Position = UDim2.new(0, x - 7, 0, y)
@@ -521,6 +528,13 @@ function updateESP()
                         end
 
                         if Config.ESP.ShowHighlight and d.Stick then
+                            -- 🎯 LIMPA AS LINHAS ANTES DE DESENHAR (evita traços presos)
+                            if d.Stick.Body then d.Stick.Body.Visible = false end
+                            if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
+                            if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
+                            if d.Stick.LegL then d.Stick.LegL.Visible = false end
+                            if d.Stick.LegR then d.Stick.LegR.Visible = false end
+
                             local function w2s(pos)
                                 local sp, on = Camera:WorldToViewportPoint(pos)
                                 if on then return Vector2.new(sp.X, sp.Y) end
@@ -590,7 +604,7 @@ function updateESP()
             hideESP(d)
         end
     end
-end
+end                        
 
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
