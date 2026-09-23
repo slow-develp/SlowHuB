@@ -655,8 +655,8 @@ function getClosest()
     end
     return closestPart
 end                        
-
- -- ═══════════ AUTOSHOT UNIVERSAL ═══════════
+   
+-- ═══════════ AUTOSHOT SIMPLES (Fluxo PvP) ═══════════
 aimbotActive = false
 _ultimoTiro = 0
 _rajadaRestante = 0
@@ -667,229 +667,52 @@ COOLDOWN_RAJADA = 0.06
 COOLDOWN_NORMAL = 0.03
 TAMANHO_RAJADA = 6
 
-atirarMetodoDetectado = nil
-atirarBotaoCache = nil
-
-local PALAVRAS_TIRO = {
-    "fire", "shoot", "atirar", "tiro", "gun", "arma", "weapon",
-    "attack", "atacar", "ataque", "hit", "punch", "soco",
-    "skill", "poder", "habilidade", "ability", "cast",
-    "combat", "combate", "strike", "golpe", "usar", "use",
-}
-
-local function nomeBateTiro(nome)
-    local n = string.lower(nome or "")
-    for _, palavra in ipairs(PALAVRAS_TIRO) do
-        if n:find(palavra) then return true end
-    end
-    return false
-end
-
-function detectarMetodoTiro()
+function atirarFluxo()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
-    if not pg then return "tela" end
-
-    -- MÉTODO 1: Fluxo PvP
+    if not pg then return false end
     local hud = pg:FindFirstChild("ButtonsHUD")
-    if hud then
-        local botoes = hud:FindFirstChild("BotoesArma")
-        if botoes then
-            local fb = botoes:FindFirstChild("FireButton")
-            if fb and fb:IsA("GuiObject") and fb.Visible and fb.AbsoluteSize.X > 0 then
-                atirarBotaoCache = fb
-                return "fluxo"
-            end
-        end
-    end
+    if not hud then return false end
+    local botoes = hud:FindFirstChild("BotoesArma")
+    if not botoes then return false end
+    local fb = botoes:FindFirstChild("FireButton")
+    if not fb then return false end
 
-    -- MÉTODO 2: Procura botão por nome
-    for _, obj in ipairs(pg:GetDescendants()) do
-        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) then
-            if obj.Visible and obj.AbsoluteSize.X > 20 and obj.AbsoluteSize.Y > 20 then
-                if nomeBateTiro(obj.Name) then
-                    atirarBotaoCache = obj
-                    return "toque"
-                end
-            end
-        end
-    end
+    if type(getconnections) ~= "function" then return false end
 
-    -- MÉTODO 3: Botão maior no canto inferior direito
-    local vp = Camera.ViewportSize
-    local melhor = nil
-    local melhorTam = 0
-    for _, obj in ipairs(pg:GetDescendants()) do
-        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) then
-            if obj.Visible and obj.AbsoluteSize.X > 40 and obj.AbsoluteSize.Y > 40 then
-                local pos = obj.AbsolutePosition
-                local size = obj.AbsoluteSize
-                local cx = pos.X + size.X / 2
-                local cy = pos.Y + size.Y / 2
-                if cx > vp.X * 0.5 and cy > vp.Y * 0.5 then
-                    if size.X > melhorTam then
-                        melhorTam = size.X
-                        melhor = obj
-                    end
-                end
-            end
-        end
-    end
+    local ok, conns = pcall(getconnections, fb.InputBegan)
+    if not ok or not conns or #conns == 0 then return false end
 
-    if melhor then
-        atirarBotaoCache = melhor
-        return "toque"
-    end
-
-    return "tela"
-end
-
-local function posicaoSeguraTela()
-    local vp = Camera.ViewportSize
-    local areasBloqueadas = {}
-
-    local pg = LocalPlayer:FindFirstChild("PlayerGui")
-    if pg then
-        local slowHub = pg:FindFirstChild("SlowHub")
-        if slowHub then
-            for _, obj in ipairs(slowHub:GetDescendants()) do
-                if (obj:IsA("TextButton") or obj:IsA("ImageButton")) and obj.Visible then
-                    local pos = obj.AbsolutePosition
-                    local size = obj.AbsoluteSize
-                    if size.X > 0 and size.Y > 0 then
-                        table.insert(areasBloqueadas, {
-                            x1 = pos.X, y1 = pos.Y,
-                            x2 = pos.X + size.X, y2 = pos.Y + size.Y
-                        })
-                    end
-                end
-            end
-        end
-    end
-
-    local candidatos = {
-        {x = vp.X * 0.15, y = vp.Y * 0.85},
-        {x = vp.X * 0.15, y = vp.Y * 0.50},
-        {x = vp.X * 0.15, y = vp.Y * 0.15},
-        {x = vp.X * 0.85, y = vp.Y * 0.85},
+    local input = {
+        UserInputType = Enum.UserInputType.MouseButton1,
+        UserInputState = Enum.UserInputState.Begin,
+        Position = Vector3.zero,
+        Delta = Vector3.zero,
+        KeyCode = Enum.KeyCode.Unknown
     }
 
-    for _, c in ipairs(candidatos) do
-        local livre = true
-        for _, a in ipairs(areasBloqueadas) do
-            if c.x >= a.x1 and c.x <= a.x2 and c.y >= a.y1 and c.y <= a.y2 then
-                livre = false
-                break
-            end
-        end
-        if livre then return c.x, c.y end
-    end
-
-    return vp.X * 0.15, vp.Y * 0.85
-end
-
-function atirarFluxo()
-    local metodo = atirarMetodoDetectado or detectarMetodoTiro()
-    atirarMetodoDetectado = metodo
-
-    if metodo == "fluxo" and atirarBotaoCache and atirarBotaoCache.Parent then
-        if type(getconnections) == "function" then
-            local fb = atirarBotaoCache
-            pcall(function()
-                local conns = getconnections(fb.InputBegan)
-                if conns and #conns > 0 then
-                    for _, c in ipairs(conns) do
-                        pcall(function()
-                            if c.Function then
-                                c.Function({
-                                    UserInputType = Enum.UserInputType.MouseButton1,
-                                    UserInputState = Enum.UserInputState.Begin,
-                                    Position = Vector3.zero,
-                                    Delta = Vector3.zero,
-                                    KeyCode = Enum.KeyCode.Unknown
-                                })
-                            end
-                        end)
-                    end
-                end
-            end)
-            pcall(function()
-                local conns = getconnections(fb.InputEnded)
-                if conns and #conns > 0 then
-                    for _, c in ipairs(conns) do
-                        pcall(function()
-                            if c.Function then
-                                c.Function({
-                                    UserInputType = Enum.UserInputType.MouseButton1,
-                                    UserInputState = Enum.UserInputState.End,
-                                    Position = Vector3.zero,
-                                    Delta = Vector3.zero,
-                                    KeyCode = Enum.KeyCode.Unknown
-                                })
-                            end
-                        end)
-                    end
-                end
-            end)
-            return true
-        end
-    end
-
-    if metodo == "toque" and atirarBotaoCache and atirarBotaoCache.Parent and atirarBotaoCache.Visible then
-        local btn = atirarBotaoCache
+    for _, c in ipairs(conns) do
         pcall(function()
-            local vim = game:GetService("VirtualInputManager")
-            local pos = btn.AbsolutePosition
-            local size = btn.AbsoluteSize
-            local x = pos.X + (size.X / 2)
-            local y = pos.Y + (size.Y / 2)
-            vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-            task.wait(0.02)
-            vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
+            if c.Function then c.Function(input) end
         end)
-        return true
     end
 
-    pcall(function()
-        local vim = game:GetService("VirtualInputManager")
-        local x, y = posicaoSeguraTela()
-        vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-        task.wait(0.02)
-        vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
-    end)
-
-    pcall(function()
-        local vim = game:GetService("VirtualInputManager")
-        vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-        task.wait(0.02)
-        vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-    end)
-
-    local char = LocalPlayer.Character
-    if char then
-        local tool = char:FindFirstChildOfClass("Tool")
-        if tool and type(tool.Activate) == "function" then
-            pcall(function() tool:Activate() end)
+    local ok2, conns2 = pcall(getconnections, fb.InputEnded)
+    if ok2 and conns2 and #conns2 > 0 then
+        local inputEnd = {
+            UserInputType = Enum.UserInputType.MouseButton1,
+            UserInputState = Enum.UserInputState.End,
+            Position = Vector3.zero,
+            Delta = Vector3.zero,
+            KeyCode = Enum.KeyCode.Unknown
+        }
+        for _, c in ipairs(conns2) do
+            pcall(function()
+                if c.Function then c.Function(inputEnd) end
+            end)
         end
     end
-
     return true
-end
-
-task.spawn(function()
-    while task.wait(5) do
-        pcall(function()
-            if Config and Config.Aimbot and Config.Aimbot.Enabled then
-                if atirarBotaoCache and (not atirarBotaoCache.Parent or not atirarBotaoCache.Visible) then
-                    atirarMetodoDetectado = nil
-                    atirarBotaoCache = nil
-                end
-                if not atirarMetodoDetectado then
-                    detectarMetodoTiro()
-                end
-            end
-        end)
-    end
-end)
+end               
 
 -- ═══════════ MUNIÇÃO / AUTO RELOAD ═══════════
 function getMunicao()
