@@ -663,8 +663,31 @@ function getClosest()
             if char and hrp and char.Parent and plr.Parent then
                 local part = nil
                 if Config.Aimbot.Target == "Head" then
+                    part = char:FindFirstChild("Head")
+                end
+                if not part then part = hrp end
+
+                if part and part.Parent then
+                    local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
+                    if onScreen and pos.Z > 0 then
+                        local screenPos = Vector2.new(pos.X, pos.Y)
+                        local dist = (screenPos - center).Magnitude
+                        if dist <= Config.Aimbot.FOVSize then
+                            if not Config.Aimbot.WallCheck or hasLineOfSight(char) then
+                                if dist < closestDist then
+                                    closestPart = part
+                                    closestDist = dist
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return closestPart
+end
                                                   
-   
 -- ═══════════ AUTOSHOT SIMPLES (Fluxo PvP) ═══════════
 aimbotActive = false
 _ultimoTiro = 0
