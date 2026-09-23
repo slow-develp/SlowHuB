@@ -932,6 +932,234 @@ function recarregarArma()
     return true
 end
 
+-- ═══════════ AUTOSHOT UNIVERSAL ═══════════
+aimbotActive = false
+_ultimoTiro = 0
+_rajadaRestante = 0
+_ultimoAlvo = nil
+
+COOLDOWN_HEAD = 0.07
+COOLDOWN_RAJADA = 0.06
+COOLDOWN_NORMAL = 0.03
+TAMANHO_RAJADA = 6
+
+atirarMetodoDetectado = nil
+atirarBotaoCache = nil
+
+local PALAVRAS_TIRO = {
+    "fire", "shoot", "atirar", "tiro", "gun", "arma", "weapon",
+    "attack", "atacar", "ataque", "hit", "punch", "soco",
+    "skill", "poder", "habilidade", "ability", "cast",
+    "combat", "combate", "strike", "golpe", "usar", "use",
+}
+
+local function nomeBateTiro(nome)
+    local n = string.lower(nome or "")
+    for _, palavra in ipairs(PALAVRAS_TIRO) do
+        if n:find(palavra) then return true end
+    end
+    return false
+end
+
+function detectarMetodoTiro()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return "tool" end
+
+    -- MÉTODO 1: Fluxo PvP
+    local hud = pg:FindFirstChild("ButtonsHUD")
+    if hud then
+        local botoes = hud:FindFirstChild("BotoesArma")
+        if botoes then
+            local fb = botoes:FindFirstChild("FireButton")
+            if fb and fb:IsA("GuiObject") and fb.Visible and fb.AbsoluteSize.X > 0 then
+                atirarBotaoCache = fb
+                return "fluxo"
+            end
+        end
+    end
+
+    -- MÉTODO 2: Por nome
+    for _, obj in ipairs(pg:GetDescendants()) do
+        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) then
+            if obj.Visible and obj.AbsoluteSize.X > 20 and obj.AbsoluteSize.Y > 20 then
+                if nomeBateTiro(obj.Name) then
+                    atirarBotaoCache = obj
+                    return "toque"
+                end
+            end
+        end
+    end
+
+    -- MÉTODO 3: Botão maior no canto inferior direito
+    local vp = Camera.ViewportSize
+    local melhor = nil
+    local melhorTam = 0
+    for _, obj in ipairs(pg:GetDescendants()) do
+        if (obj:IsA("TextButton") or obj:IsA("ImageButton")) then
+            if obj.Visible and obj.AbsoluteSize.X > 40 and obj.AbsoluteSize.Y > 40 then
+                local pos = obj.AbsolutePosition
+                local size = obj.AbsoluteSize
+                local cx = pos.X + size.X / 2
+                local cy = pos.Y + size.Y / 2
+                if cx > vp.X * 0.5 and cy > vp.Y * 0.5 then
+                    if size.X > melhorTam then
+                        melhorTam = size.X
+                        melhor = obj
+                    end
+                end
+            end
+        end
+    end
+
+    if melhor then
+        atirarBotaoCache = melhor
+        return "toque"
+    end
+
+    return "tool"
+end
+
+function atirarFluxo()
+    local metodo = atirarMetodoDetectado or detectarMetodoTiro()
+    atirarMetodoDetectado = metodo
+
+    -- 🔫 MÉTODO 1: Fluxo PvP — getconnections
+    if metodo == "fluxo" and atirarBotaoCache and atirarBotaoCache.Parent then
+        if type(getconnections) == "function" then
+            local fb = atirarBotaoCache
+            local ok, conns = pcall(getconnections, fb.InputBegan)
+            if ok and conns and #conns > 0 then
+                local input = {
+                    UserInputType = Enum.UserInputType.MouseButton1,
+                    UserInputState = Enum.UserInputState.Begin,
+                    Position = Vector3.zero,
+                    Delta = Vector3.zero,
+                    KeyCode = Enum.KeyCode.Unknown
+                }
+                for _, c in ipairs(conns) do
+                    pcall(function()
+                        if c.Function then c.Function(input) end
+                    end)
+                end
+                local ok2, conns2 = pcall(getconnections, fb.InputEnded)
+                if ok2 and conns2 and #conns2 > 0 then
+                    local inputEnd = {
+                        UserInputType = Enum.UserInputType.MouseButton1,
+                        UserInputState = Enum.UserInputState.End,
+                        Position = Vector3.zero,
+                        Delta = Vector3.zero,
+                        KeyCode = Enum.KeyCode.Unknown
+                    }
+                    for _, c in ipairs(conns2) do
+                        pcall(function()
+                            if c.Function then c.Function(inputEnd) end
+                        end)
+                    end
+                end
+                return true
+            end
+        end
+        metodo = "toque"
+    end
+
+    -- 🔫 MÉTODO 2: Clique REAL no botão (funciona em qualquer jogo)
+    if metodo == "toque" and atirarBotaoCache and atirarBotaoCache.Parent then
+        local btn = atirarBotaoCache
+        if btn.Visible and btn.AbsoluteSize.X > 0 then
+            pcall(function()
+                local vim = game:GetService("VirtualInputManager")
+                local pos = btn.AbsolutePosition
+                local size = btn.AbsoluteSize
+                local x = pos.X + (size.X / 2)
+                local y = pos.Y + (size.Y / 2)
+
+                -- Down
+                vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
+                task.wait(0.015)
+                -- Up
+                vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
+            end)
+            return true
+        end
+    end
+
+    -- 🔫 MÉTODO 3: Tool ativa
+    local char = LocalPlayer.Character
+    if char then
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool and type(tool.Activate) == "function" then
+            pcall(function() tool:Activate() end)
+            return true
+        end
+    end
+
+    return false
+end
+
+task.spawn(function()
+    while task.wait(5) do
+        pcall(function()
+            if Config and Config.Aimbot and Config.Aimbot.Enabled then
+                if atirarBotaoCache and (not atirarBotaoCache.Parent or not atirarBotaoCache.Visible) then
+                    atirarMetodoDetectado = nil
+                    atirarBotaoCache = nil
+                end
+                if not atirarMetodoDetectado then
+                    detectarMetodoTiro()
+                end
+            end
+        end)
+    end
+end)
+
+-- ═══════════ MUNIÇÃO / RELOAD ═══════════
+function getMunicao()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return nil, nil end
+    local zexis = pg:FindFirstChild("ZexisGUI")
+    if not zexis then return nil, nil end
+    local ammoFrame = zexis:FindFirstChild("AmmoFrame")
+    if not ammoFrame then return nil, nil end
+    local valueLbl = ammoFrame:FindFirstChild("Value")
+    if not valueLbl or not valueLbl:IsA("TextLabel") then return nil, nil end
+    local texto = valueLbl.Text or ""
+    local atual, max = texto:match("(%d+)/(%d+)")
+    if atual and max then
+        return tonumber(atual), tonumber(max)
+    end
+    return nil, nil
+end
+
+function recarregarArma()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return false end
+    local hud = pg:FindFirstChild("ButtonsHUD")
+    if not hud then return false end
+    local botoes = hud:FindFirstChild("BotoesArma")
+    if not botoes then return false end
+    local rb = botoes:FindFirstChild("ReloadButton")
+    if not rb then return false end
+    if type(getconnections) ~= "function" then return false end
+
+    local ok, conns = pcall(getconnections, rb.InputBegan)
+    if not ok or not conns or #conns == 0 then return false end
+
+    local input = {
+        UserInputType = Enum.UserInputType.MouseButton1,
+        UserInputState = Enum.UserInputState.Begin,
+        Position = Vector3.zero,
+        Delta = Vector3.zero,
+        KeyCode = Enum.KeyCode.Unknown
+    }
+
+    for _, c in ipairs(conns) do
+        pcall(function()
+            if c.Function then c.Function(input) end
+        end)
+    end
+    return true
+end
+
 -- ═══════════ AIMBOT ═══════════
 function startAimbot()
     if aimbotActive then return end
