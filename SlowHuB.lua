@@ -515,70 +515,71 @@ function updateESP()
                                     d.Line.BackgroundColor3 = Config.ESP.Color
                                 end
 
-                                if Config.ESP.ShowHighlight and d.Stick then
-                                    local function w2s(pos)
-                                        local sp, on = Camera:WorldToViewportPoint(pos)
-                                        if on and sp.Z > 0 then return Vector2.new(sp.X, sp.Y) end
-                                        return nil
-                                    end
-
-                                    local torsoSup = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-                                    local torsoInf = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
-                                    local bracoESup = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
-                                    local bracoDSup = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
-                                    local maoE = char:FindFirstChild("LeftHand") or char:FindFirstChild("Left Arm")
-                                    local maoD = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
-                                    local peE = char:FindFirstChild("LeftFoot") or char:FindFirstChild("Left Leg")
-                                    local peD = char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg")
-
-                                    local pPescoco = torsoSup and w2s(torsoSup.Position)
-                                    local pQuadril = torsoInf and w2s(torsoInf.Position)
-                                    local pOmbroE = bracoESup and w2s(bracoESup.Position)
-                                    local pOmbroD = bracoDSup and w2s(bracoDSup.Position)
-                                    local pMaoE = maoE and w2s(maoE.Position)
-                                    local pMaoD = maoD and w2s(maoD.Position)
-                                    local pPeE = peE and w2s(peE.Position)
-                                    local pPeD = peD and w2s(peD.Position)
-
-                                    local cor = Config.ESP.Color
-
-                                    local function desenhaLinha(frame, p1, p2, espessura)
-                                        if not p1 or not p2 then
-                                            frame.Visible = false
-                                            return
-                                        end
-                                        local dx2 = p2.X - p1.X
-                                        local dy2 = p2.Y - p1.Y
-                                        local dist2 = math.sqrt(dx2 * dx2 + dy2 * dy2)
-                                        if dist2 < 2 then
-                                            frame.Visible = false
-                                            return
-                                        end
-                                        local mx = (p1.X + p2.X) / 2
-                                        local my = (p1.Y + p2.Y) / 2
-                                        local ang = math.deg(math.atan2(-dx2, dy2))
-                                        frame.Visible = true
-                                        frame.Position = UDim2.new(0, mx, 0, my)
-                                        frame.Size = UDim2.new(0, espessura or 2, 0, dist2)
-                                        frame.Rotation = ang
-                                        frame.BackgroundColor3 = cor
-                                    end
-
-                                    desenhaLinha(d.Stick.Body, pPescoco, pQuadril, 2)
-                                    desenhaLinha(d.Stick.ArmL, pOmbroE, pMaoE, 2)
-                                    desenhaLinha(d.Stick.ArmR, pOmbroD, pMaoD, 2)
-                                    desenhaLinha(d.Stick.LegL, pQuadril, pPeE, 2)
-                                    desenhaLinha(d.Stick.LegR, pQuadril, pPeD, 2)
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
+                                 if Config.ESP.ShowHighlight and d.Stick then
+    local function w2s(pos)
+        local sp, on = Camera:WorldToViewportPoint(pos)
+        if on and sp.Z > 0 then return Vector2.new(sp.X, sp.Y) end
+        return nil
     end
-end
 
+    local torsoSup = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+    local torsoInf = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
+    local bracoESup = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
+    local bracoDSup = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
+    local maoE = char:FindFirstChild("LeftHand") or char:FindFirstChild("Left Arm")
+    local maoD = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
+    local peE = char:FindFirstChild("LeftFoot") or char:FindFirstChild("Left Leg")
+    local peD = char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg")
+
+    local pPescoco = torsoSup and w2s(torsoSup.Position)
+    local pQuadril = torsoInf and w2s(torsoInf.Position)
+    local pOmbroE = bracoESup and w2s(bracoESup.Position)
+    local pOmbroD = bracoDSup and w2s(bracoDSup.Position)
+    local pMaoE = maoE and w2s(maoE.Position)
+    local pMaoD = maoD and w2s(maoD.Position)
+    local pPeE = peE and w2s(peE.Position)
+    local pPeD = peD and w2s(peD.Position)
+
+    local cor = Config.ESP.Color
+
+    -- 🔑 Linhas FINAS (1px) e arredondadas
+    local ESPESSURA_PALITO = 1
+
+    local function desenhaLinha(frame, p1, p2)
+        if not p1 or not p2 then
+            frame.Visible = false
+            return
+        end
+        local dx2 = p2.X - p1.X
+        local dy2 = p2.Y - p1.Y
+        local dist2 = math.sqrt(dx2 * dx2 + dy2 * dy2)
+        if dist2 < 2 then
+            frame.Visible = false
+            return
+        end
+        local mx = (p1.X + p2.X) / 2
+        local my = (p1.Y + p2.Y) / 2
+        local ang = math.deg(math.atan2(-dx2, dy2))
+        frame.Visible = true
+        frame.Position = UDim2.new(0, mx, 0, my)
+        frame.Size = UDim2.new(0, ESPESSURA_PALITO, 0, dist2)
+        frame.Rotation = ang
+        frame.BackgroundColor3 = cor
+    end
+
+    desenhaLinha(d.Stick.Body, pPescoco, pQuadril)
+    desenhaLinha(d.Stick.ArmL, pOmbroE, pMaoE)
+    desenhaLinha(d.Stick.ArmR, pOmbroD, pMaoD)
+    desenhaLinha(d.Stick.LegL, pQuadril, pPeE)
+    desenhaLinha(d.Stick.LegR, pQuadril, pPeD)
+elseif d.Stick then
+    if d.Stick.Body then d.Stick.Body.Visible = false end
+    if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
+    if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
+    if d.Stick.LegL then d.Stick.LegL.Visible = false end
+    if d.Stick.LegR then d.Stick.LegR.Visible = false end
+                                end
+                        
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
 fovFrame.BackgroundTransparency = 1
