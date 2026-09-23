@@ -322,6 +322,7 @@ function createESP(plr)
     stick.Name = "Stick"
     stick.Parent = espFolder
 
+    -- 🔑 Linhas do boneco palito (finas e arredondadas)
     local function makeStickLine(nome)
         local f = Instance.new("Frame")
         f.Name = nome
@@ -331,6 +332,8 @@ function createESP(plr)
         f.Visible = false
         f.ZIndex = 6
         f.Parent = stick
+        local corner = Instance.new("UICorner", f)
+        corner.CornerRadius = UDim.new(1, 0)
         return f
     end
 
@@ -402,7 +405,7 @@ function updateESP()
         end
     end
 
-    -- 🎯 Só MOSTRA quem tá válido (o resto ficou escondido no início)
+    -- 🎯 Só MOSTRA quem tá válido
     for plr, d in pairs(espData) do
         if isValidTarget(plr, Config.ESP.TeamCheck) then
             local char, hum, hrp = safeChar(plr)
@@ -474,6 +477,34 @@ function updateESP()
                                                 vidaMax = mAttr
                                             end
                                         end
+                                        if not vida or not vidaMax or vidaMax <= 0 then
+                                            for _, obj in ipairs(char:GetDescendants()) do
+                                                if obj:IsA("NumberValue") or obj:IsA("IntValue") then
+                                                    local n = string.lower(obj.Name)
+                                                    if n == "health" or n == "hp" or n == "vida" then
+                                                        vida = obj.Value
+                                                        local mObj = char:FindFirstChild("MaxHealth") or char:FindFirstChild("MaxHP") or char:FindFirstChild("maxHealth")
+                                                        if mObj and mObj.Value and mObj.Value > 0 then
+                                                            vidaMax = mObj.Value
+                                                        else
+                                                            vidaMax = 100
+                                                        end
+                                                        break
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        if not vida or not vidaMax or vidaMax <= 0 then
+                                            local ls = plr:FindFirstChild("leaderstats")
+                                            if ls then
+                                                local hpStat = ls:FindFirstChild("Health") or ls:FindFirstChild("HP") or ls:FindFirstChild("Vida")
+                                                local maxStat = ls:FindFirstChild("MaxHealth") or ls:FindFirstChild("MaxHP")
+                                                if hpStat then
+                                                    vida = hpStat.Value
+                                                    if maxStat then vidaMax = maxStat.Value else vidaMax = 100 end
+                                                end
+                                            end
+                                        end
                                     end)
 
                                     if vida and vidaMax and vidaMax > 0 then
@@ -515,71 +546,71 @@ function updateESP()
                                     d.Line.BackgroundColor3 = Config.ESP.Color
                                 end
 
-                                 if Config.ESP.ShowHighlight and d.Stick then
-    local function w2s(pos)
-        local sp, on = Camera:WorldToViewportPoint(pos)
-        if on and sp.Z > 0 then return Vector2.new(sp.X, sp.Y) end
-        return nil
-    end
+                                if Config.ESP.ShowHighlight and d.Stick then
+                                    local function w2s(pos)
+                                        local sp, on = Camera:WorldToViewportPoint(pos)
+                                        if on and sp.Z > 0 then return Vector2.new(sp.X, sp.Y) end
+                                        return nil
+                                    end
 
-    local torsoSup = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
-    local torsoInf = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
-    local bracoESup = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
-    local bracoDSup = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
-    local maoE = char:FindFirstChild("LeftHand") or char:FindFirstChild("Left Arm")
-    local maoD = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
-    local peE = char:FindFirstChild("LeftFoot") or char:FindFirstChild("Left Leg")
-    local peD = char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg")
+                                    local torsoSup = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                                    local torsoInf = char:FindFirstChild("LowerTorso") or char:FindFirstChild("Torso")
+                                    local bracoESup = char:FindFirstChild("LeftUpperArm") or char:FindFirstChild("Left Arm")
+                                    local bracoDSup = char:FindFirstChild("RightUpperArm") or char:FindFirstChild("Right Arm")
+                                    local maoE = char:FindFirstChild("LeftHand") or char:FindFirstChild("Left Arm")
+                                    local maoD = char:FindFirstChild("RightHand") or char:FindFirstChild("Right Arm")
+                                    local peE = char:FindFirstChild("LeftFoot") or char:FindFirstChild("Left Leg")
+                                    local peD = char:FindFirstChild("RightFoot") or char:FindFirstChild("Right Leg")
 
-    local pPescoco = torsoSup and w2s(torsoSup.Position)
-    local pQuadril = torsoInf and w2s(torsoInf.Position)
-    local pOmbroE = bracoESup and w2s(bracoESup.Position)
-    local pOmbroD = bracoDSup and w2s(bracoDSup.Position)
-    local pMaoE = maoE and w2s(maoE.Position)
-    local pMaoD = maoD and w2s(maoD.Position)
-    local pPeE = peE and w2s(peE.Position)
-    local pPeD = peD and w2s(peD.Position)
+                                    local pPescoco = torsoSup and w2s(torsoSup.Position)
+                                    local pQuadril = torsoInf and w2s(torsoInf.Position)
+                                    local pOmbroE = bracoESup and w2s(bracoESup.Position)
+                                    local pOmbroD = bracoDSup and w2s(bracoDSup.Position)
+                                    local pMaoE = maoE and w2s(maoE.Position)
+                                    local pMaoD = maoD and w2s(maoD.Position)
+                                    local pPeE = peE and w2s(peE.Position)
+                                    local pPeD = peD and w2s(peD.Position)
 
-    local cor = Config.ESP.Color
+                                    local cor = Config.ESP.Color
+                                    local ESPESSURA_PALITO = 1
 
-    -- 🔑 Linhas FINAS (1px) e arredondadas
-    local ESPESSURA_PALITO = 1
+                                    local function desenhaLinha(frame, p1, p2)
+                                        if not p1 or not p2 then
+                                            frame.Visible = false
+                                            return
+                                        end
+                                        local dx2 = p2.X - p1.X
+                                        local dy2 = p2.Y - p1.Y
+                                        local dist2 = math.sqrt(dx2 * dx2 + dy2 * dy2)
+                                        if dist2 < 2 then
+                                            frame.Visible = false
+                                            return
+                                        end
+                                        local mx = (p1.X + p2.X) / 2
+                                        local my = (p1.Y + p2.Y) / 2
+                                        local ang = math.deg(math.atan2(-dx2, dy2))
+                                        frame.Visible = true
+                                        frame.Position = UDim2.new(0, mx, 0, my)
+                                        frame.Size = UDim2.new(0, ESPESSURA_PALITO, 0, dist2)
+                                        frame.Rotation = ang
+                                        frame.BackgroundColor3 = cor
+                                    end
 
-    local function desenhaLinha(frame, p1, p2)
-        if not p1 or not p2 then
-            frame.Visible = false
-            return
-        end
-        local dx2 = p2.X - p1.X
-        local dy2 = p2.Y - p1.Y
-        local dist2 = math.sqrt(dx2 * dx2 + dy2 * dy2)
-        if dist2 < 2 then
-            frame.Visible = false
-            return
-        end
-        local mx = (p1.X + p2.X) / 2
-        local my = (p1.Y + p2.Y) / 2
-        local ang = math.deg(math.atan2(-dx2, dy2))
-        frame.Visible = true
-        frame.Position = UDim2.new(0, mx, 0, my)
-        frame.Size = UDim2.new(0, ESPESSURA_PALITO, 0, dist2)
-        frame.Rotation = ang
-        frame.BackgroundColor3 = cor
-    end
-
-    desenhaLinha(d.Stick.Body, pPescoco, pQuadril)
-    desenhaLinha(d.Stick.ArmL, pOmbroE, pMaoE)
-    desenhaLinha(d.Stick.ArmR, pOmbroD, pMaoD)
-    desenhaLinha(d.Stick.LegL, pQuadril, pPeE)
-    desenhaLinha(d.Stick.LegR, pQuadril, pPeD)
-elseif d.Stick then
-    if d.Stick.Body then d.Stick.Body.Visible = false end
-    if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
-    if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
-    if d.Stick.LegL then d.Stick.LegL.Visible = false end
-    if d.Stick.LegR then d.Stick.LegR.Visible = false end
+                                    desenhaLinha(d.Stick.Body, pPescoco, pQuadril)
+                                    desenhaLinha(d.Stick.ArmL, pOmbroE, pMaoE)
+                                    desenhaLinha(d.Stick.ArmR, pOmbroD, pMaoD)
+                                    desenhaLinha(d.Stick.LegL, pQuadril, pPeE)
+                                    desenhaLinha(d.Stick.LegR, pQuadril, pPeD)
                                 end
-                        
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
 fovFrame = Instance.new("Frame")
 fovFrame.Name = "Aimbot_FOV"
 fovFrame.BackgroundTransparency = 1
@@ -632,30 +663,7 @@ function getClosest()
             if char and hrp and char.Parent and plr.Parent then
                 local part = nil
                 if Config.Aimbot.Target == "Head" then
-                    part = char:FindFirstChild("Head")
-                end
-                if not part then part = hrp end
-
-                if part and part.Parent then
-                    local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
-                    if onScreen and pos.Z > 0 then
-                        local screenPos = Vector2.new(pos.X, pos.Y)
-                        local dist = (screenPos - center).Magnitude
-                        if dist <= Config.Aimbot.FOVSize then
-                            if not Config.Aimbot.WallCheck or hasLineOfSight(char) then
-                                if dist < closestDist then
-                                    closestPart = part
-                                    closestDist = dist
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return closestPart
-end                        
+                                                  
    
 -- ═══════════ AUTOSHOT SIMPLES (Fluxo PvP) ═══════════
 aimbotActive = false
