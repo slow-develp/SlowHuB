@@ -790,20 +790,18 @@ function startAimbot()
                 local camPos = Camera.CFrame.Position
                 local aimPos = target.Position
 
+                -- Mira rápida (sem lerp muito lento)
                 if (aimPos - camPos).Magnitude > 0.1 then
                     local lookAt = CFrame.new(camPos, aimPos)
                     local smooth = math.clamp(Config.Aimbot.Smoothness or 0.25, 0.05, 1)
-                    Camera.CFrame = Camera.CFrame:Lerp(lookAt, smooth)
+                    Camera.CFrame = Camera.CFrame:Lerp(lookAt, math.max(smooth, 0.5))
                 end
 
                 RunService.RenderStepped:Wait()
 
+                -- Re-mira firme antes do tiro
                 if target and target.Parent then
-                    local camPos2 = Camera.CFrame.Position
-                    local aimPos2 = target.Position
-                    if (aimPos2 - camPos2).Magnitude > 0.1 then
-                        Camera.CFrame = CFrame.new(camPos2, aimPos2)
-                    end
+                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
                 end
 
                 if Config.Aimbot.AutoShot then
@@ -836,6 +834,7 @@ function startAimbot()
         aimbotActive = false
     end)
 end
+
 
 -- ═══════════ HITBOX UNIVERSAL ═══════════
 hitboxConn = nil
