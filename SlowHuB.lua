@@ -702,67 +702,30 @@ TAMANHO_RAJADA = 6
 
 atirarMetodoDetectado = nil
 atirarBotaoCache = nil
-atirarTentativas = 0
 
--- 🔍 Lista de palavras comuns (o script procura em qualquer botão)
+-- Lista de palavras pra procurar botão de ataque
 local PALAVRAS_TIRO = {
     "fire", "shoot", "atirar", "tiro", "gun", "arma", "weapon",
-    "attack", "atacar", "ataque", "hit", "punch", "soco", "bater",
-    "skill", "poder", "habilidade", "ability", "cast", "usar", "use",
-    "action", "acao", "combat", "combate", "strike", "golpe",
-    "shot", "blast", "explosao", "bomb", "bomba", "throw", "lancar",
-    "swing", "slash", "corte", "cut", "spell", "magia", "magic",
+    "attack", "atacar", "ataque", "hit", "punch", "soco",
+    "skill", "poder", "habilidade", "ability", "cast",
+    "action", "combat", "combate", "strike", "golpe",
+    "shot", "blast", "bomb", "throw", "swing", "slash",
+    "usar", "use", "magic", "spell",
 }
 
--- 🔍 Verifica se o nome do botão bate com alguma palavra
 local function nomeBateTiro(nome)
     local n = string.lower(nome or "")
     for _, palavra in ipairs(PALAVRAS_TIRO) do
-        if n:find(palavra) then
-            return true
-        end
+        if n:find(palavra) then return true end
     end
     return false
 end
 
--- 🔍 Verifica se o botão tá na área do "polegar" (canto inferior direito)
-local function botaoNaAreaAtaque(btn)
-    local vp = Camera.ViewportSize
-    local pos = btn.AbsolutePosition
-    local size = btn.AbsoluteSize
-    if size.X <= 0 or size.Y <= 0 then return false end
-
-    local cx = pos.X + size.X / 2
-    local cy = pos.Y + size.Y / 2
-
-    -- Considera "área de ataque" o quadrante inferior direito (60% da tela)
-    local limiteX = vp.X * 0.4
-    local limiteY = vp.Y * 0.4
-
-    return cx > limiteX and cy > limiteY
-end
-
--- 🔍 Verifica se o botão tem conexão clicável
-local function botaoClicavel(btn)
-    if type(getconnections) ~= "function" then
-        return true  -- assume que sim (vai tentar VirtualInputManager)
-    end
-    local tipos = {"Activated", "MouseButton1Down", "MouseButton1Up", "MouseButton1Click", "InputBegan", "TouchTap"}
-    for _, tipo in ipairs(tipos) do
-        local ok, conns = pcall(getconnections, btn[tipo])
-        if ok and conns and #conns > 0 then
-            return true
-        end
-    end
-    return false
-end
-
--- 🔍 FUNÇÃO INTELIGENTE: procura botão de atirar
 function detectarMetodoTiro()
     local pg = LocalPlayer:FindFirstChild("PlayerGui")
     if not pg then return "tool" end
 
-    -- ═══════════ MÉTODO 1: Fluxo PvP (prioridade máxima) ═══════════
+    -- MÉTODO 1: Fluxo PvP
     local hud = pg:FindFirstChild("ButtonsHUD")
     if hud then
         local botoes = hud:FindFirstChild("BotoesArma")
@@ -778,63 +741,53 @@ function detectarMetodoTiro()
         end
     end
 
-    -- ═══════════ MÉTODO 2: Procura botão por NOME ═══════════
-    local botaoPorNome = nil
-    local botaoNaArea = nil
-
+    -- MÉTODO 2: Procura botão por nome
     for _, obj in ipairs(pg:GetDescendants()) do
         if obj:IsA("TextButton") or obj:IsA("ImageButton") then
-            if obj.Visible and obj.AbsoluteSize.X > 0 then
-                -- Prioridade 1: nome bate com palavra de tiro
-                if nomeBateTiro(obj.Name) then
-                    if botaoClicavel(obj) then
-                        botaoPorNome = obj
-                        break
-                    end
-                end
-                -- Prioridade 2: botão na área de ataque (canto inferior direito)
-                if not botaoNaArea and botaoNaAreaAtaque(obj) and botaoClicavel(obj) then
-                    -- Ignora botões muito pequenos (geralmente são de UI)
-                    if obj.AbsoluteSize.X > 30 and obj.AbsoluteSize.Y > 30 then
-                        botaoNaArea = obj
+            if obj.Visible and obj.AbsoluteSize.X > 0 and nomeBateTiro(obj.Name) then
+                atirarBotaoCache = obj
+                return "toque"
+            end
+        end
+    end
+
+    -- MÉTODO 3: Botão grande na área inferior direita (área de ataque)
+    local vp = Camera.ViewportSize
+    local melhor = nil
+    local melhorTam = 0
+    for _, obj in ipairs(pg:GetDescendants()) do
+        if obj:IsA("TextButton") or obj:IsA("ImageButton") then
+            if obj.Visible and obj.AbsoluteSize.X > 40 and obj.AbsoluteSize.Y > 40 then
+                local pos = obj.AbsolutePosition
+                local size = obj.AbsoluteSize
+                local cx = pos.X + size.X / 2
+                local cy = pos.Y + size.Y / 2
+                if cx > vp.X * 0.5 and cy > vp.Y * 0.5 then
+                    if size.X > melhorTam then
+                        melhorTam = size.X
+                        melhor = obj
                     end
                 end
             end
         end
     end
 
-    if botaoPorNome then
-        atirarBotaoCache = botaoPorNome
+    if melhor then
+        atirarBotaoCache = melhor
         return "toque"
     end
 
-    if botaoNaArea then
-        atirarBotaoCache = botaoNaArea
-        return "toque"
-    end
-
-    -- ═══════════ MÉTODO 3: Tool ativa (fallback) ═══════════
-    local char = LocalPlayer.Character
-    if char then
-        local tool = char:FindFirstChildOfClass("Tool")
-        if tool then return "tool" end
-    end
-
-    return "toque"
+    return "tool"
 end
 
--- 🎯 FUNÇÃO DE ATIRAR (inteligente, tenta várias abordagens)
 function atirarFluxo()
     local metodo = atirarMetodoDetectado or detectarMetodoTiro()
     atirarMetodoDetectado = metodo
 
-    -- ═══════════ MÉTODO FLUXO PVP ═══════════
+    -- MÉTODO FLUXO PVP
     if metodo == "fluxo" and atirarBotaoCache and atirarBotaoCache.Parent then
-        if type(getconnections) ~= "function" then
-            metodo = "toque"
-        else
+        if type(getconnections) == "function" then
             local fb = atirarBotaoCache
-
             local ok, conns = pcall(getconnections, fb.InputBegan)
             if ok and conns and #conns > 0 then
                 local input = {
@@ -866,36 +819,16 @@ function atirarFluxo()
                 end
                 return true
             end
-
-            local ok3, conns3 = pcall(getconnections, fb.MouseButton1Click)
-            if ok3 and conns3 and #conns3 > 0 then
-                for _, c in ipairs(conns3) do
-                    pcall(function()
-                        if c.Function then c.Function() end
-                    end)
-                end
-                return true
-            end
-
-            metodo = "toque"
         end
+        metodo = "toque"
     end
 
-    -- ═══════════ MÉTODO TOQUE (inteligente) ═══════════
+    -- MÉTODO TOQUE: tenta várias conexões
     if metodo == "toque" and atirarBotaoCache and atirarBotaoCache.Parent then
         local btn = atirarBotaoCache
 
-        -- Tenta getconnections em TODOS os tipos de conexão
         if type(getconnections) == "function" then
-            local tipos = {
-                "Activated",
-                "MouseButton1Down",
-                "MouseButton1Up",
-                "MouseButton1Click",
-                "InputBegan",
-                "TouchTap",
-                "TouchLongPress",
-            }
+            local tipos = {"Activated", "MouseButton1Down", "MouseButton1Up", "MouseButton1Click", "InputBegan"}
             for _, tipo in ipairs(tipos) do
                 local ok, conns = pcall(getconnections, btn[tipo])
                 if ok and conns and #conns > 0 then
@@ -910,14 +843,6 @@ function atirarFluxo()
                                         Delta = Vector3.zero,
                                         KeyCode = Enum.KeyCode.Unknown
                                     })
-                                elseif tipo == "InputEnded" then
-                                    c.Function({
-                                        UserInputType = Enum.UserInputType.MouseButton1,
-                                        UserInputState = Enum.UserInputState.End,
-                                        Position = Vector3.zero,
-                                        Delta = Vector3.zero,
-                                        KeyCode = Enum.KeyCode.Unknown
-                                    })
                                 else
                                     c.Function()
                                 end
@@ -927,23 +852,10 @@ function atirarFluxo()
                 end
             end
         end
-
-        -- Fallback: VirtualInputManager (clica na posição do botão)
-        pcall(function()
-            local vim = game:GetService("VirtualInputManager")
-            local pos = btn.AbsolutePosition
-            local size = btn.AbsoluteSize
-            local x = pos.X + size.X / 2
-            local y = pos.Y + size.Y / 2
-            vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
-            task.wait(0.02)
-            vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
-        end)
-
         return true
     end
 
-    -- ═══════════ MÉTODO TOOL (fallback final) ═══════════
+    -- MÉTODO TOOL
     local char = LocalPlayer.Character
     if char then
         local tool = char:FindFirstChildOfClass("Tool")
@@ -956,33 +868,145 @@ function atirarFluxo()
     return false
 end
 
--- 🔄 Re-detecção inteligente (a cada 5s, ou se o botão sumiu)
 task.spawn(function()
     while task.wait(5) do
         pcall(function()
             if Config and Config.Aimbot and Config.Aimbot.Enabled then
-                -- Se o botão sumiu da tela
                 if atirarBotaoCache and (not atirarBotaoCache.Parent or not atirarBotaoCache.Visible) then
                     atirarMetodoDetectado = nil
                     atirarBotaoCache = nil
-                    atirarTentativas = 0
                 end
-
-                -- Se ainda não detectou nada
                 if not atirarMetodoDetectado then
                     detectarMetodoTiro()
-                end
-
-                -- Se tentou várias vezes e não achou, reseta
-                atirarTentativas = atirarTentativas + 1
-                if atirarTentativas > 12 and not atirarBotaoCache then
-                    atirarMetodoDetectado = nil
-                    atirarTentativas = 0
                 end
             end
         end)
     end
-end)            
+end)
+
+-- ═══════════ MUNIÇÃO / RELOAD ═══════════
+function getMunicao()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return nil, nil end
+    local zexis = pg:FindFirstChild("ZexisGUI")
+    if not zexis then return nil, nil end
+    local ammoFrame = zexis:FindFirstChild("AmmoFrame")
+    if not ammoFrame then return nil, nil end
+    local valueLbl = ammoFrame:FindFirstChild("Value")
+    if not valueLbl or not valueLbl:IsA("TextLabel") then return nil, nil end
+    local texto = valueLbl.Text or ""
+    local atual, max = texto:match("(%d+)/(%d+)")
+    if atual and max then
+        return tonumber(atual), tonumber(max)
+    end
+    return nil, nil
+end
+
+function recarregarArma()
+    local pg = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pg then return false end
+    local hud = pg:FindFirstChild("ButtonsHUD")
+    if not hud then return false end
+    local botoes = hud:FindFirstChild("BotoesArma")
+    if not botoes then return false end
+    local rb = botoes:FindFirstChild("ReloadButton")
+    if not rb then return false end
+    if type(getconnections) ~= "function" then return false end
+
+    local ok, conns = pcall(getconnections, rb.InputBegan)
+    if not ok or not conns or #conns == 0 then return false end
+
+    local input = {
+        UserInputType = Enum.UserInputType.MouseButton1,
+        UserInputState = Enum.UserInputState.Begin,
+        Position = Vector3.zero,
+        Delta = Vector3.zero,
+        KeyCode = Enum.KeyCode.Unknown
+    }
+
+    for _, c in ipairs(conns) do
+        pcall(function()
+            if c.Function then c.Function(input) end
+        end)
+    end
+    return true
+end
+
+-- ═══════════ AIMBOT ═══════════
+function startAimbot()
+    if aimbotActive then return end
+    aimbotActive = true
+    task.spawn(function()
+        while Config.Aimbot.Enabled do
+            local target = getClosest()
+            if target and target.Parent then
+                local camPos = Camera.CFrame.Position
+                local aimPos = target.Position
+
+                if (aimPos - camPos).Magnitude > 0.1 then
+                    local lookAt = CFrame.new(camPos, aimPos)
+                    local smooth = math.clamp(Config.Aimbot.Smoothness or 0.25, 0.05, 1)
+                    Camera.CFrame = Camera.CFrame:Lerp(lookAt, smooth)
+                end
+
+                RunService.RenderStepped:Wait()
+
+                if target and target.Parent then
+                    local camPos2 = Camera.CFrame.Position
+                    local aimPos2 = target.Position
+                    if (aimPos2 - camPos2).Magnitude > 0.1 then
+                        Camera.CFrame = CFrame.new(camPos2, aimPos2)
+                    end
+                end
+
+                if Config.Aimbot.AutoShot then
+                    local isHead = (target.Name == "Head")
+                    if isHead then
+                        if tick() - _ultimoTiro > COOLDOWN_HEAD then
+                            _ultimoTiro = tick()
+                            atirarFluxo()
+                        end
+                        _rajadaRestante = 0
+                    else
+                        if _rajadaRestante > 0 then
+                            if tick() - _ultimoTiro > COOLDOWN_RAJADA then
+                                _ultimoTiro = tick()
+                                atirarFluxo()
+                                _rajadaRestante = _rajadaRestante - 1
+                            end
+                        else
+                            if tick() - _ultimoTiro > COOLDOWN_NORMAL then
+                                _ultimoTiro = tick()
+                                atirarFluxo()
+                                _rajadaRestante = TAMANHO_RAJADA - 1
+                            end
+                        end
+                    end
+                end
+            end
+            RunService.RenderStepped:Wait()
+        end
+        aimbotActive = false
+    end)
+end
+
+-- Auto Reload
+_ultimoReloadAuto = 0
+task.spawn(function()
+    while task.wait(0.25) do
+        if Config.Aimbot and Config.Aimbot.AutoReload then
+            local atual, max = getMunicao()
+            if atual and max and max > 0 then
+                if atual <= 2 then
+                    if tick() - _ultimoReloadAuto > 1.5 then
+                        _ultimoReloadAuto = tick()
+                        recarregarArma()
+                    end
+                end
+            end
+        end
+    end
+end)
 
 -- ═══════════ HITBOX UNIVERSAL ═══════════
 hitboxConn = nil
@@ -1111,10 +1135,21 @@ Players.PlayerRemoving:Connect(function(plr)
     end
 end)
 
+-- ═══════════ TRACK PLAYERS ═══════════
 function trackPlayer(plr)
     if plr == LocalPlayer then return end
     createESP(plr)
 end
+
+for _, plr in ipairs(Players:GetPlayers()) do
+    trackPlayer(plr)
+end
+
+Players.PlayerAdded:Connect(trackPlayer)
+Players.PlayerRemoving:Connect(function(plr)
+    destroyESP(plr)
+end)                        
+                    
 -- NOCLIP
 noclipConn = nil
 function setNoclip(state)
