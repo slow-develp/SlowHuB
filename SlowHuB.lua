@@ -1091,31 +1091,64 @@ function setHitbox(state)
         return
     end
 
+    -- Aplica imediatamente em todos
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             pcall(function() aplicarHitboxEmPlayer(plr) end)
         end
     end
 
+    -- Loop que mantém atualizado
     hitboxConn = RunService.Heartbeat:Connect(function()
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer then
+                -- 🔑 Se o character mudou, limpa o cache e re-aplica
+                local char = plr.Character
+                if char then
+                    local partes = hitboxExtraPartes[plr]
+                    if partes and #partes > 0 then
+                        -- Verifica se alguma parte ficou órfã (character morreu)
+                        local orfa = false
+                        for _, part in ipairs(partes) do
+                            if not part or not part.Parent then
+                                orfa = true
+                                break
+                            end
+                        end
+                        if orfa then
+                            hitboxExtraPartes[plr] = {}
+                        end
+                    end
+                end
+
                 pcall(function() aplicarHitboxEmPlayer(plr) end)
             end
         end
     end)
-end
 
-Players.PlayerRemoving:Connect(function(plr)
-    if hitboxExtraPartes[plr] then
-        for _, part in ipairs(hitboxExtraPartes[plr]) do
-            if part and part.Parent then
-                pcall(function() part:Destroy() end)
+    -- 🔑 Conecta CharacterAdded em TODOS os players atuais
+    local function conectarRespawn(plr)
+        if plr == LocalPlayer then return end
+        plr.CharacterAdded:Connect(function()
+            if Config.Hitbox.Enabled then
+                task.wait(0.3)
+                hitboxExtraPartes[plr] = {}
+                pcall(function() aplicarHitboxEmPlayer(plr) end)
             end
-        end
-        hitboxExtraPartes[plr] = nil
+        end)
     end
-end)
+
+    for _, plr in ipairs(Players:GetPlayers()) do
+        conectarRespawn(plr)
+    end
+
+    -- 🔑 Quando alguém entrar DEPOIS, também conecta
+    Players.PlayerAdded:Connect(function(plr)
+        if Config.Hitbox.Enabled then
+            conectarRespawn(plr)
+        end
+    end)
+end
 
 -- ═══════════ TRACK PLAYERS ═══════════
 function trackPlayer(plr)
