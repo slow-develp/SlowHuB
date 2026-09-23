@@ -656,7 +656,7 @@ function getClosest()
     return closestPart
 end                        
 
--- ═══════════ AUTOSHOT UNIVERSAL ═══════════
+ -- ═══════════ AUTOSHOT UNIVERSAL ═══════════
 aimbotActive = false
 _ultimoTiro = 0
 _rajadaRestante = 0
@@ -743,7 +743,6 @@ function detectarMetodoTiro()
     return "tela"
 end
 
--- Calcula posição segura na tela (longe do painel e da mira)
 local function posicaoSeguraTela()
     local vp = Camera.ViewportSize
     local areasBloqueadas = {}
@@ -782,9 +781,7 @@ local function posicaoSeguraTela()
                 break
             end
         end
-        if livre then
-            return c.x, c.y
-        end
+        if livre then return c.x, c.y end
     end
 
     return vp.X * 0.15, vp.Y * 0.85
@@ -794,7 +791,6 @@ function atirarFluxo()
     local metodo = atirarMetodoDetectado or detectarMetodoTiro()
     atirarMetodoDetectado = metodo
 
-    -- ═══════════ TENTATIVA 1: Fluxo PvP (getconnections) ═══════════
     if metodo == "fluxo" and atirarBotaoCache and atirarBotaoCache.Parent then
         if type(getconnections) == "function" then
             local fb = atirarBotaoCache
@@ -838,7 +834,6 @@ function atirarFluxo()
         end
     end
 
-    -- ═══════════ TENTATIVA 2: Clique EXATO no botão detectado ═══════════
     if metodo == "toque" and atirarBotaoCache and atirarBotaoCache.Parent and atirarBotaoCache.Visible then
         local btn = atirarBotaoCache
         pcall(function()
@@ -847,7 +842,6 @@ function atirarFluxo()
             local size = btn.AbsoluteSize
             local x = pos.X + (size.X / 2)
             local y = pos.Y + (size.Y / 2)
-
             vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
             task.wait(0.02)
             vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
@@ -855,17 +849,14 @@ function atirarFluxo()
         return true
     end
 
-    -- ═══════════ TENTATIVA 3: Clique na TELA em posição SEGURA ═══════════
     pcall(function()
         local vim = game:GetService("VirtualInputManager")
         local x, y = posicaoSeguraTela()
-
         vim:SendMouseButtonEvent(x, y, 0, true, game, 0)
         task.wait(0.02)
         vim:SendMouseButtonEvent(x, y, 0, false, game, 0)
     end)
 
-    -- ═══════════ TENTATIVA 4: Tecla E ═══════════
     pcall(function()
         local vim = game:GetService("VirtualInputManager")
         vim:SendKeyEvent(true, Enum.KeyCode.E, false, game)
@@ -873,7 +864,6 @@ function atirarFluxo()
         vim:SendKeyEvent(false, Enum.KeyCode.E, false, game)
     end)
 
-    -- ═══════════ TENTATIVA 5: Tool:Activate() ═══════════
     local char = LocalPlayer.Character
     if char then
         local tool = char:FindFirstChildOfClass("Tool")
@@ -1114,30 +1104,6 @@ function setHitbox(state)
             end
         end
     end)
-
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            plr.CharacterAdded:Connect(function()
-                if Config.Hitbox.Enabled then
-                    task.wait(0.5)
-                    hitboxExtraPartes[plr] = {}
-                    pcall(function() aplicarHitboxEmPlayer(plr) end)
-                end
-            end)
-        end
-    end
-
-    Players.PlayerAdded:Connect(function(plr)
-        if Config.Hitbox.Enabled and plr ~= LocalPlayer then
-            plr.CharacterAdded:Connect(function()
-                if Config.Hitbox.Enabled then
-                    task.wait(0.5)
-                    hitboxExtraPartes[plr] = {}
-                    pcall(function() aplicarHitboxEmPlayer(plr) end)
-                end
-            end)
-        end
-    end)
 end
 
 Players.PlayerRemoving:Connect(function(plr)
@@ -1164,7 +1130,7 @@ end
 Players.PlayerAdded:Connect(trackPlayer)
 Players.PlayerRemoving:Connect(function(plr)
     destroyESP(plr)
-end)
+end)                                                               
 
 -- NOCLIP
 noclipConn = nil
