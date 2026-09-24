@@ -1126,7 +1126,7 @@ function startFly()
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
     flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyVel.P = 8000
+    flyBodyVel.P = 12500        -- 🔑 mais força
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
@@ -1150,7 +1150,7 @@ function startFly()
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
             flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyVel.P = 8000
+            flyBodyVel.P = 12500
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
@@ -1171,12 +1171,13 @@ function startFly()
             local mdCam = cam:VectorToObjectSpace(md)
             move = (cam.LookVector * -mdCam.Z) + (cam.RightVector * mdCam.X)
             if move.Magnitude > 0 then
+                -- 🔑 Usa a velocidade configurada direto, sem limite baixo
                 move = move.Unit * Config.Fly.Speed
             end
         end
 
         local currentVel = flyBodyVel.Velocity
-        flyBodyVel.Velocity = currentVel:Lerp(move, 0.3)
+        flyBodyVel.Velocity = currentVel:Lerp(move, 0.5)   -- 🔑 resposta mais rápida
         flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
     end)
 end
@@ -1186,13 +1187,26 @@ function setFly(state)
 
     if state then
         startFly()
-        -- 🔑 Re-aplica no respawn
+
+        -- 🔑 PERSISTE após respawn
         flyCharConn = LocalPlayer.CharacterAdded:Connect(function()
             if not Config.Fly.Enabled then return end
-            task.wait(0.5)
-            stopFly()
+
+            -- Espera o personagem carregar
+            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            char:WaitForChild("HumanoidRootPart", 5)
+            char:WaitForChild("Humanoid", 5)
+            task.wait(0.3)
+
+            -- Limpa conexão antiga e re-inicia
+            if flyConn then flyConn:Disconnect() flyConn = nil end
+            if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+            if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+            flyBodyVel, flyBodyGyro = nil, nil
+
             startFly()
         end)
+
         addNotif("Fly", "Ativado. Use o analógico.", 3)
     else
         stopFly()
