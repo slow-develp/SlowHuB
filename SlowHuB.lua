@@ -1055,29 +1055,48 @@ function setNoclip(state)
     end)
 end
 
--- SPEED
+-- SPEED (com respawn)
 speedConn = nil
+speedCharConn = nil
+
 function setSpeed(state)
     if speedConn then speedConn:Disconnect() speedConn = nil end
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
+    if speedCharConn then speedCharConn:Disconnect() speedCharConn = nil end
+
+    local function aplicaSpeed()
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        if state then
+            hum.WalkSpeed = Config.Speed.Value
+            speedConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
+                if Config.Speed.Enabled and hum.WalkSpeed ~= Config.Speed.Value then
+                    hum.WalkSpeed = Config.Speed.Value
+                end
+            end)
+        else
+            hum.WalkSpeed = 16
+        end
+    end
+
+    aplicaSpeed()
+
     if state then
-        hum.WalkSpeed = Config.Speed.Value
-        speedConn = hum:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-            if Config.Speed.Enabled and hum.WalkSpeed ~= Config.Speed.Value then
-                hum.WalkSpeed = Config.Speed.Value
-            end
+        -- 🔑 Re-aplica no respawn
+        speedCharConn = LocalPlayer.CharacterAdded:Connect(function()
+            if not Config.Speed.Enabled then return end
+            task.wait(0.5)
+            if speedConn then speedConn:Disconnect() end
+            aplicaSpeed()
         end)
-    else
-        hum.WalkSpeed = 16
     end
 end
 
--- FLY
+-- FLY (com respawn)
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
+flyCharConn = nil
 
 function stopFly()
     if flyConn then flyConn:Disconnect() flyConn = nil end
@@ -1163,8 +1182,17 @@ function startFly()
 end
 
 function setFly(state)
+    if flyCharConn then flyCharConn:Disconnect() flyCharConn = nil end
+
     if state then
         startFly()
+        -- 🔑 Re-aplica no respawn
+        flyCharConn = LocalPlayer.CharacterAdded:Connect(function()
+            if not Config.Fly.Enabled then return end
+            task.wait(0.5)
+            stopFly()
+            startFly()
+        end)
         addNotif("Fly", "Ativado. Use o analógico.", 3)
     else
         stopFly()
