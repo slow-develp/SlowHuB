@@ -1092,7 +1092,7 @@ function setSpeed(state)
     end
 end
 
--- FLY (com respawn)
+-- FLY (rápido, controlável, com respawn)
 flyConn = nil
 flyBodyVel = nil
 flyBodyGyro = nil
@@ -1126,15 +1126,15 @@ function startFly()
     flyBodyVel = Instance.new("BodyVelocity")
     flyBodyVel.Name = "SlowHub_FlyVel"
     flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyVel.P = 12500        -- 🔑 mais força
+    flyBodyVel.P = 30000   -- 🔑 Mais forte = resposta mais rápida
     flyBodyVel.Velocity = Vector3.zero
     flyBodyVel.Parent = hrp
 
     flyBodyGyro = Instance.new("BodyGyro")
     flyBodyGyro.Name = "SlowHub_FlyGyro"
     flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    flyBodyGyro.P = 15000
-    flyBodyGyro.D = 200
+    flyBodyGyro.P = 50000   -- 🔑 Mais forte = menos tremida
+    flyBodyGyro.D = 500     -- 🔑 Mais damping = mais estável
     flyBodyGyro.CFrame = Camera.CFrame
     flyBodyGyro.Parent = hrp
 
@@ -1150,7 +1150,7 @@ function startFly()
             flyBodyVel = Instance.new("BodyVelocity")
             flyBodyVel.Name = "SlowHub_FlyVel"
             flyBodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyVel.P = 12500
+            flyBodyVel.P = 30000
             flyBodyVel.Velocity = Vector3.zero
             flyBodyVel.Parent = hrp
         end
@@ -1158,8 +1158,8 @@ function startFly()
             flyBodyGyro = Instance.new("BodyGyro")
             flyBodyGyro.Name = "SlowHub_FlyGyro"
             flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-            flyBodyGyro.P = 15000
-            flyBodyGyro.D = 200
+            flyBodyGyro.P = 50000
+            flyBodyGyro.D = 500
             flyBodyGyro.Parent = hrp
         end
 
@@ -1171,13 +1171,13 @@ function startFly()
             local mdCam = cam:VectorToObjectSpace(md)
             move = (cam.LookVector * -mdCam.Z) + (cam.RightVector * mdCam.X)
             if move.Magnitude > 0 then
-                -- 🔑 Usa a velocidade configurada direto, sem limite baixo
                 move = move.Unit * Config.Fly.Speed
             end
         end
 
+        -- 🔑 Lerp mais alto = resposta mais rápida (0.5 em vez de 0.3)
         local currentVel = flyBodyVel.Velocity
-        flyBodyVel.Velocity = currentVel:Lerp(move, 0.5)   -- 🔑 resposta mais rápida
+        flyBodyVel.Velocity = currentVel:Lerp(move, 0.5)
         flyBodyGyro.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
     end)
 end
@@ -1187,26 +1187,16 @@ function setFly(state)
 
     if state then
         startFly()
-
-        -- 🔑 PERSISTE após respawn
+        -- 🔑 Re-aplica automaticamente quando respawnar
         flyCharConn = LocalPlayer.CharacterAdded:Connect(function()
             if not Config.Fly.Enabled then return end
-
-            -- Espera o personagem carregar
-            local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            char:WaitForChild("HumanoidRootPart", 5)
-            char:WaitForChild("Humanoid", 5)
-            task.wait(0.3)
-
-            -- Limpa conexão antiga e re-inicia
-            if flyConn then flyConn:Disconnect() flyConn = nil end
-            if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
-            if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
-            flyBodyVel, flyBodyGyro = nil, nil
-
-            startFly()
+            task.wait(0.5)
+            stopFly()
+            task.wait(0.1)
+            if Config.Fly.Enabled then
+                startFly()
+            end
         end)
-
         addNotif("Fly", "Ativado. Use o analógico.", 3)
     else
         stopFly()
