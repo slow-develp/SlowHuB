@@ -378,9 +378,29 @@ function hideESP(d)
 end
 
 function updateESP()
-    -- 🔑 LIMPA TUDO SEMPRE no início (evita quadrados presos)
+    -- 🔑 LIMPA TUDO SEMPRE no início (evita ESP preso)
     for _, d in pairs(espData) do
         hideESP(d)
+    end
+
+    -- 🔑 Destrói ESP de players que saíram
+    for plr, d in pairs(espData) do
+        if not plr or not plr.Parent then
+            destroyESP(plr)
+        end
+    end
+
+    -- 🔑 Limpa lixo órfão no espFolder (boneco palito preso)
+    for _, obj in ipairs(espFolder:GetChildren()) do
+        if obj.Name == "Stick" then
+            local pai = nil
+            for plr, d in pairs(espData) do
+                if d.Stick == obj then pai = plr break end
+            end
+            if not pai then
+                obj:Destroy()
+            end
+        end
     end
 
     if not Config.ESP.Enabled then
