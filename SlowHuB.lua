@@ -1712,7 +1712,7 @@ capsuleTextGradient.Color = ColorSequence.new({
 capsuleTextGradient.Rotation = 0
 
 -- ═══════════════════════════════════════════════════════════
--- 🔑 KEY GUI (Axon Hub Style + RedstoneGuard)
+-- 🔑 KEY GUI (Compacto + Copia link E abre navegador)
 -- ═══════════════════════════════════════════════════════════
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
@@ -1731,144 +1731,170 @@ keyBackdrop.ZIndex = 9998
 keyBackdrop.Parent = keyGui
 
 keyBorder = Instance.new("Frame")
-keyBorder.Size = UDim2.new(0, 444, 0, 464)
-keyBorder.Position = UDim2.new(0.5, -222, 0.5, -232)
+keyBorder.Size = UDim2.new(0, 504, 0, 344)
+keyBorder.Position = UDim2.new(0.5, -252, 0.5, -172)
 keyBorder.BackgroundColor3 = Color3.new(1, 1, 1)
 keyBorder.BorderSizePixel = 0
 keyBorder.ZIndex = 9999
 keyBorder.Parent = keyGui
-Instance.new("UICorner", keyBorder).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", keyBorder).CornerRadius = UDim.new(0, 25)
 
 local keyBorderGrad = Instance.new("UIGradient", keyBorder)
 keyBorderGrad.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
     ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 230, 255)),
 })
-keyBorderGrad.Rotation = 45
+keyBorderGrad.Rotation = 0
 
 keyFrame = Instance.new("Frame")
 keyFrame.Size = UDim2.new(1, -4, 1, -4)
 keyFrame.Position = UDim2.new(0, 2, 0, 2)
-keyFrame.BackgroundColor3 = Color3.fromRGB(8, 10, 22)
+keyFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
 keyFrame.BorderSizePixel = 0
 keyFrame.Active = true
 keyFrame.ZIndex = 10000
 keyFrame.Parent = keyBorder
-Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 15)
+Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 24)
 
+-- ═══════════ HEADER COMPACTO ═══════════
 keyHeader = Instance.new("Frame")
-keyHeader.Size = UDim2.new(1, 0, 0, 90)
-keyHeader.BackgroundTransparency = 1
+keyHeader.Size = UDim2.new(1, 0, 0, 52)
+keyHeader.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+keyHeader.BackgroundTransparency = 0.1
+keyHeader.BorderSizePixel = 0
 keyHeader.ZIndex = 10001
 keyHeader.Parent = keyFrame
+Instance.new("UICorner", keyHeader).CornerRadius = UDim.new(0, 24)
 
+local keyHeaderGrad = Instance.new("UIGradient", keyHeader)
+keyHeaderGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(15, 20, 32)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(10, 14, 24)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 20, 32)),
+})
+keyHeaderGrad.Rotation = 90
+
+keyHeaderFix = Instance.new("Frame")
+keyHeaderFix.Size = UDim2.new(1, 0, 0, 20)
+keyHeaderFix.Position = UDim2.new(0, 0, 1, -20)
+keyHeaderFix.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+keyHeaderFix.BackgroundTransparency = 0.1
+keyHeaderFix.BorderSizePixel = 0
+keyHeaderFix.ZIndex = 10001
+keyHeaderFix.Parent = keyHeader
+
+-- Logo pequena
 keyLogoBox = Instance.new("Frame")
-keyLogoBox.Size = UDim2.new(0, 64, 0, 64)
-keyLogoBox.Position = UDim2.new(0, 20, 0, 14)
-keyLogoBox.BackgroundColor3 = Color3.fromRGB(15, 12, 30)
-keyLogoBox.BorderSizePixel = 0
+keyLogoBox.Size = UDim2.new(0, 26, 0, 26)
+keyLogoBox.Position = UDim2.new(0, 14, 0.5, -13)
+keyLogoBox.BackgroundTransparency = 1
 keyLogoBox.ZIndex = 10002
 keyLogoBox.Parent = keyHeader
-Instance.new("UICorner", keyLogoBox).CornerRadius = UDim.new(0, 14)
-local keyLogoStroke = Instance.new("UIStroke", keyLogoBox)
-keyLogoStroke.Color = ACCENT
-keyLogoStroke.Thickness = 1
-keyLogoStroke.Transparency = 0.6
 
 keyLogoImg = Instance.new("ImageLabel")
-keyLogoImg.Size = UDim2.new(1, -8, 1, -8)
-keyLogoImg.Position = UDim2.new(0, 4, 0, 4)
+keyLogoImg.Size = UDim2.new(1, 0, 1, 0)
 keyLogoImg.BackgroundTransparency = 1
 keyLogoImg.Image = KEY_CONFIG.Logo
 keyLogoImg.ScaleType = Enum.ScaleType.Fit
 keyLogoImg.ZIndex = 10003
 keyLogoImg.Parent = keyLogoBox
 
+-- Título
 keyTitle = Instance.new("TextLabel")
-keyTitle.Size = UDim2.new(1, -230, 0, 32)
-keyTitle.Position = UDim2.new(0, 96, 0, 20)
+keyTitle.Size = UDim2.new(0, 220, 0, 20)
+keyTitle.Position = UDim2.new(0, 48, 0, 8)
 keyTitle.BackgroundTransparency = 1
-keyTitle.Text = KEY_CONFIG.Title
+keyTitle.Text = KEY_CONFIG.Title .. " — Key System"
 keyTitle.TextColor3 = TEXT
-keyTitle.Font = Enum.Font.GothamBold
-keyTitle.TextSize = 26
+keyTitle.Font = Enum.Font.GothamBlack
+keyTitle.TextSize = 15
 keyTitle.TextXAlignment = Enum.TextXAlignment.Left
 keyTitle.ZIndex = 10002
 keyTitle.Parent = keyHeader
 
+local keyTitleGrad = Instance.new("UIGradient", keyTitle)
+keyTitleGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 230, 255)),
+})
+keyTitleGrad.Rotation = 0
+
+-- Subtítulo
 keySub = Instance.new("TextLabel")
-keySub.Size = UDim2.new(1, -230, 0, 22)
-keySub.Position = UDim2.new(0, 96, 0, 52)
+keySub.Size = UDim2.new(0, 220, 0, 12)
+keySub.Position = UDim2.new(0, 48, 0, 28)
 keySub.BackgroundTransparency = 1
 keySub.Text = KEY_CONFIG.Subtitle
-keySub.TextColor3 = TEXTDIM
-keySub.Font = Enum.Font.Gotham
-keySub.TextSize = 14
+keySub.TextColor3 = Color3.fromRGB(130, 140, 160)
+keySub.Font = Enum.Font.GothamMedium
+keySub.TextSize = 10
 keySub.TextXAlignment = Enum.TextXAlignment.Left
 keySub.ZIndex = 10002
 keySub.Parent = keyHeader
 
+-- ═══════════ BOTÃO CLOSE (igual ao painel principal) ═══════════
 keyCloseBtn = Instance.new("TextButton")
 keyCloseBtn.Name = "SlowHubKeyClose"
-keyCloseBtn.Size = UDim2.new(0, 32, 0, 32)
-keyCloseBtn.Position = UDim2.new(1, -46, 0, 16)
-keyCloseBtn.BackgroundColor3 = Color3.fromRGB(30, 22, 40)
-keyCloseBtn.BorderSizePixel = 0
-keyCloseBtn.Text = "✕"
-keyCloseBtn.TextColor3 = Color3.fromRGB(220, 200, 220)
-keyCloseBtn.TextSize = 16
-keyCloseBtn.Font = Enum.Font.GothamBold
+keyCloseBtn.Size = UDim2.new(0, 28, 0, 28)
+keyCloseBtn.Position = UDim2.new(1, -46, 0.5, -14)
+keyCloseBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+keyCloseBtn.BackgroundTransparency = 1
+keyCloseBtn.Text = ""
 keyCloseBtn.AutoButtonColor = false
 keyCloseBtn.ZIndex = 10002
 keyCloseBtn.Parent = keyHeader
-Instance.new("UICorner", keyCloseBtn).CornerRadius = UDim.new(0, 10)
-local keyCloseStroke = Instance.new("UIStroke", keyCloseBtn)
-keyCloseStroke.Color = Color3.fromRGB(180, 80, 120)
-keyCloseStroke.Thickness = 1
-keyCloseStroke.Transparency = 0.5
+Instance.new("UICorner", keyCloseBtn).CornerRadius = UDim.new(0, 7)
+
+local keyCloseIcon = Instance.new("ImageLabel")
+keyCloseIcon.Size = UDim2.new(0, 16, 0, 16)
+keyCloseIcon.Position = UDim2.new(0.5, -8, 0.5, -8)
+keyCloseIcon.BackgroundTransparency = 1
+keyCloseIcon.Image = ICON_CLOSE
+keyCloseIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+keyCloseIcon.ImageTransparency = 0.15
+keyCloseIcon.ResampleMode = Enum.ResamplerMode.Default
+keyCloseIcon.ScaleType = Enum.ScaleType.Fit
+keyCloseIcon.ZIndex = 10003
+keyCloseIcon.Parent = keyCloseBtn
 
 keyCloseBtn.MouseEnter:Connect(function()
-    keyCloseBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 80)
-    keyCloseBtn.TextColor3 = Color3.new(1, 1, 1)
+    TweenService:Create(keyCloseBtn, TweenInfo.new(0.15), {BackgroundTransparency = 0.85, BackgroundColor3 = Color3.fromRGB(200, 50, 50)}):Play()
 end)
 keyCloseBtn.MouseLeave:Connect(function()
-    keyCloseBtn.BackgroundColor3 = Color3.fromRGB(30, 22, 40)
-    keyCloseBtn.TextColor3 = Color3.fromRGB(220, 200, 220)
+    TweenService:Create(keyCloseBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 end)
 keyCloseBtn.MouseButton1Click:Connect(function()
     keyGui:Destroy()
     pcall(function() gui:Destroy() end)
 end)
 
-keyDivider = Instance.new("Frame")
-keyDivider.Size = UDim2.new(1, -32, 0, 1)
-keyDivider.Position = UDim2.new(0, 16, 0, 90)
-keyDivider.BackgroundColor3 = PURPLE_BORDER
-keyDivider.BackgroundTransparency = 0.5
-keyDivider.BorderSizePixel = 0
-keyDivider.ZIndex = 10002
-keyDivider.Parent = keyFrame
-
-keyBody = Instance.new("Frame")
-keyBody.Size = UDim2.new(1, -40, 1, -110)
-keyBody.Position = UDim2.new(0, 20, 0, 100)
+-- ═══════════ BODY SCROLLABLE ═══════════
+keyBody = Instance.new("ScrollingFrame")
+keyBody.Size = UDim2.new(1, -20, 1, -70)
+keyBody.Position = UDim2.new(0, 10, 0, 60)
 keyBody.BackgroundTransparency = 1
+keyBody.BorderSizePixel = 0
+keyBody.ScrollBarThickness = 3
+keyBody.ScrollBarImageColor3 = ACCENT
+keyBody.CanvasSize = UDim2.new(0, 0, 0, 0)
+keyBody.AutomaticCanvasSize = Enum.AutomaticSize.Y
 keyBody.ZIndex = 10001
 keyBody.Parent = keyFrame
 
 keyLayout = Instance.new("UIListLayout", keyBody)
-keyLayout.Padding = UDim.new(0, 10)
+keyLayout.Padding = UDim.new(0, 8)
 keyLayout.SortOrder = Enum.SortOrder.LayoutOrder
 keyLayout.Parent = keyBody
 
+-- Input
 keyInputFrame = Instance.new("Frame")
-keyInputFrame.Size = UDim2.new(1, 0, 0, 42)
+keyInputFrame.Size = UDim2.new(1, -8, 0, 38)
 keyInputFrame.LayoutOrder = 1
 keyInputFrame.BackgroundColor3 = Color3.fromRGB(14, 16, 30)
 keyInputFrame.BorderSizePixel = 0
 keyInputFrame.ZIndex = 10002
 keyInputFrame.Parent = keyBody
-Instance.new("UICorner", keyInputFrame).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", keyInputFrame).CornerRadius = UDim.new(0, 8)
 local keyInputStroke = Instance.new("UIStroke", keyInputFrame)
 keyInputStroke.Color = PURPLE_BORDER
 keyInputStroke.Thickness = 1.2
@@ -1882,26 +1908,27 @@ keyInput.Text = ""
 keyInput.PlaceholderText = "Digite sua Key aqui..."
 keyInput.PlaceholderColor3 = TEXTDIM
 keyInput.TextColor3 = TEXT
-keyInput.TextSize = 15
+keyInput.TextSize = 14
 keyInput.Font = Enum.Font.Gotham
 keyInput.TextXAlignment = Enum.TextXAlignment.Left
 keyInput.ClearTextOnFocus = false
 keyInput.ZIndex = 10003
 keyInput.Parent = keyInputFrame
 
+-- Validar
 keyValidateBtn = Instance.new("TextButton")
-keyValidateBtn.Size = UDim2.new(1, 0, 0, 42)
+keyValidateBtn.Size = UDim2.new(1, -8, 0, 38)
 keyValidateBtn.LayoutOrder = 2
 keyValidateBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 100)
 keyValidateBtn.BorderSizePixel = 0
 keyValidateBtn.Text = "✅  Validar Key"
 keyValidateBtn.TextColor3 = Color3.new(1, 1, 1)
-keyValidateBtn.TextSize = 15
+keyValidateBtn.TextSize = 14
 keyValidateBtn.Font = Enum.Font.GothamBold
 keyValidateBtn.AutoButtonColor = false
 keyValidateBtn.ZIndex = 10002
 keyValidateBtn.Parent = keyBody
-Instance.new("UICorner", keyValidateBtn).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", keyValidateBtn).CornerRadius = UDim.new(0, 8)
 
 keyValidateBtn.MouseEnter:Connect(function()
     keyValidateBtn.BackgroundColor3 = Color3.fromRGB(70, 220, 120)
@@ -1910,19 +1937,21 @@ keyValidateBtn.MouseLeave:Connect(function()
     keyValidateBtn.BackgroundColor3 = Color3.fromRGB(50, 200, 100)
 end)
 
+-- Label "ou"
 keyOrLbl = Instance.new("TextLabel")
-keyOrLbl.Size = UDim2.new(1, 0, 0, 22)
+keyOrLbl.Size = UDim2.new(1, -8, 0, 18)
 keyOrLbl.LayoutOrder = 3
 keyOrLbl.BackgroundTransparency = 1
-keyOrLbl.Text = "──────────  ou  ──────────"
+keyOrLbl.Text = "────────  ou  ────────"
 keyOrLbl.TextColor3 = TEXTDIM
-keyOrLbl.TextSize = 12
+keyOrLbl.TextSize = 11
 keyOrLbl.Font = Enum.Font.Gotham
 keyOrLbl.ZIndex = 10002
 keyOrLbl.Parent = keyBody
 
+-- Discord
 keyDiscordBtn = Instance.new("TextButton")
-keyDiscordBtn.Size = UDim2.new(1, 0, 0, 42)
+keyDiscordBtn.Size = UDim2.new(1, -8, 0, 38)
 keyDiscordBtn.LayoutOrder = 4
 keyDiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 keyDiscordBtn.BorderSizePixel = 0
@@ -1930,11 +1959,11 @@ keyDiscordBtn.Text = ""
 keyDiscordBtn.AutoButtonColor = false
 keyDiscordBtn.ZIndex = 10002
 keyDiscordBtn.Parent = keyBody
-Instance.new("UICorner", keyDiscordBtn).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", keyDiscordBtn).CornerRadius = UDim.new(0, 8)
 
 keyDiscordLogo = Instance.new("ImageLabel")
-keyDiscordLogo.Size = UDim2.new(0, 22, 0, 22)
-keyDiscordLogo.Position = UDim2.new(0, 12, 0.5, -11)
+keyDiscordLogo.Size = UDim2.new(0, 20, 0, 20)
+keyDiscordLogo.Position = UDim2.new(0, 12, 0.5, -10)
 keyDiscordLogo.BackgroundTransparency = 1
 keyDiscordLogo.Image = KEY_CONFIG.DiscordLogo
 keyDiscordLogo.ScaleType = Enum.ScaleType.Fit
@@ -1943,11 +1972,11 @@ keyDiscordLogo.Parent = keyDiscordBtn
 
 keyDiscordText = Instance.new("TextLabel")
 keyDiscordText.Size = UDim2.new(1, -50, 1, 0)
-keyDiscordText.Position = UDim2.new(0, 42, 0, 0)
+keyDiscordText.Position = UDim2.new(0, 40, 0, 0)
 keyDiscordText.BackgroundTransparency = 1
 keyDiscordText.Text = "Entrar no Discord — Key Permanente"
 keyDiscordText.TextColor3 = Color3.new(1, 1, 1)
-keyDiscordText.TextSize = 14
+keyDiscordText.TextSize = 13
 keyDiscordText.Font = Enum.Font.GothamBold
 keyDiscordText.TextXAlignment = Enum.TextXAlignment.Left
 keyDiscordText.ZIndex = 10003
@@ -1959,31 +1988,53 @@ end)
 keyDiscordBtn.MouseLeave:Connect(function()
     keyDiscordBtn.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
 end)
+
+-- 🔑 COPIA + ABRE NAVEGADOR (Discord)
 keyDiscordBtn.MouseButton1Click:Connect(function()
-    if setclipboard then pcall(function() setclipboard(KEY_CONFIG.DiscordInvite) end) end
+    local url = KEY_CONFIG.DiscordInvite
+
+    -- Copia o link
     pcall(function()
-        game:GetService("GuiService"):OpenBrowserWindow(KEY_CONFIG.DiscordInvite)
+        if setclipboard then
+            setclipboard(url)
+        elseif toclipboard then
+            toclipboard(url)
+        end
     end)
+
+    -- Abre o navegador
+    local abriu = false
+    pcall(function()
+        game:GetService("GuiService"):OpenBrowserWindow(url)
+        abriu = true
+    end)
+
     setPermanent()
-    addNotif("Discord", "Abra um ticket para receber a Key Permanente.", 4)
+    if abriu then
+        addNotif("Discord", "Link copiado + navegador aberto. Abra um ticket!", 5)
+    else
+        addNotif("Discord", "Link copiado! Cole no navegador.", 5)
+    end
 end)
 
+-- Label temporária
 keyTempLbl = Instance.new("TextLabel")
-keyTempLbl.Size = UDim2.new(1, 0, 0, 22)
+keyTempLbl.Size = UDim2.new(1, -8, 0, 18)
 keyTempLbl.LayoutOrder = 5
 keyTempLbl.BackgroundTransparency = 1
 keyTempLbl.Text = "📥  Pegar Key Temporária:"
 keyTempLbl.TextColor3 = TEXT
-keyTempLbl.TextSize = 14
+keyTempLbl.TextSize = 13
 keyTempLbl.Font = Enum.Font.GothamMedium
 keyTempLbl.TextXAlignment = Enum.TextXAlignment.Left
 keyTempLbl.ZIndex = 10002
 keyTempLbl.Parent = keyBody
 
+-- Providers
 for i, provider in ipairs(KEY_CONFIG.Providers) do
     local btn = Instance.new("TextButton")
     btn.Name = "Provider_" .. provider.Name
-    btn.Size = UDim2.new(1, 0, 0, 46)
+    btn.Size = UDim2.new(1, -8, 0, 40)
     btn.LayoutOrder = 5 + i
     btn.BackgroundColor3 = provider.Color
     btn.BorderSizePixel = 0
@@ -1991,7 +2042,7 @@ for i, provider in ipairs(KEY_CONFIG.Providers) do
     btn.AutoButtonColor = false
     btn.ZIndex = 10002
     btn.Parent = keyBody
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
 
     local btnStroke = Instance.new("UIStroke", btn)
     btnStroke.Color = provider.Hover
@@ -1999,14 +2050,14 @@ for i, provider in ipairs(KEY_CONFIG.Providers) do
     btnStroke.Transparency = 0.5
 
     local logoBox = Instance.new("Frame")
-    logoBox.Size = UDim2.new(0, 32, 0, 32)
-    logoBox.Position = UDim2.new(0, 8, 0.5, -16)
+    logoBox.Size = UDim2.new(0, 28, 0, 28)
+    logoBox.Position = UDim2.new(0, 8, 0.5, -14)
     logoBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     logoBox.BackgroundTransparency = 0.15
     logoBox.BorderSizePixel = 0
     logoBox.ZIndex = 10003
     logoBox.Parent = btn
-    Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", logoBox).CornerRadius = UDim.new(0, 7)
 
     local logo = Instance.new("ImageLabel")
     logo.Size = UDim2.new(1, -6, 1, -6)
@@ -2019,11 +2070,11 @@ for i, provider in ipairs(KEY_CONFIG.Providers) do
 
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, -100, 1, 0)
-    label.Position = UDim2.new(0, 50, 0, 0)
+    label.Position = UDim2.new(0, 44, 0, 0)
     label.BackgroundTransparency = 1
     label.Text = "Pegar Key via " .. provider.Name
     label.TextColor3 = Color3.fromRGB(20, 20, 30)
-    label.TextSize = 15
+    label.TextSize = 13
     label.Font = Enum.Font.GothamBold
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.ZIndex = 10003
@@ -2031,11 +2082,11 @@ for i, provider in ipairs(KEY_CONFIG.Providers) do
 
     local arrow = Instance.new("TextLabel")
     arrow.Size = UDim2.new(0, 30, 1, 0)
-    arrow.Position = UDim2.new(1, -36, 0, 0)
+    arrow.Position = UDim2.new(1, -34, 0, 0)
     arrow.BackgroundTransparency = 1
-    arrow.Text = "→"
+    arrow.Text = "↗"
     arrow.TextColor3 = Color3.fromRGB(20, 20, 30)
-    arrow.TextSize = 22
+    arrow.TextSize = 18
     arrow.Font = Enum.Font.GothamBold
     arrow.ZIndex = 10003
     arrow.Parent = btn
@@ -2046,28 +2097,49 @@ for i, provider in ipairs(KEY_CONFIG.Providers) do
     btn.MouseLeave:Connect(function()
         btn.BackgroundColor3 = provider.Color
     end)
+
+    -- 🔑 COPIA + ABRE NAVEGADOR (Providers)
     btn.MouseButton1Click:Connect(function()
-        if setclipboard then pcall(function() setclipboard(KEY_CONFIG.RedstoneURL) end) end
+        local url = KEY_CONFIG.RedstoneURL
+
+        -- Copia o link
         pcall(function()
-            game:GetService("GuiService"):OpenBrowserWindow(KEY_CONFIG.RedstoneURL)
+            if setclipboard then
+                setclipboard(url)
+            elseif toclipboard then
+                toclipboard(url)
+            end
         end)
-        addNotif(provider.Name, "Complete a verificação para receber sua Key.", 4)
+
+        -- Abre o navegador
+        local abriu = false
+        pcall(function()
+            game:GetService("GuiService"):OpenBrowserWindow(url)
+            abriu = true
+        end)
+
+        if abriu then
+            addNotif(provider.Name, "Link copiado + navegador aberto!", 5)
+        else
+            addNotif(provider.Name, "Link copiado! Cole no navegador.", 5)
+        end
     end)
 end
 
+-- Status
 keyStatus = Instance.new("TextLabel")
-keyStatus.Size = UDim2.new(1, 0, 0, 16)
+keyStatus.Size = UDim2.new(1, -8, 0, 14)
 keyStatus.LayoutOrder = 20
 keyStatus.BackgroundTransparency = 1
 keyStatus.Text = ""
 keyStatus.TextColor3 = DANGER
 keyStatus.Font = Enum.Font.Gotham
-keyStatus.TextSize = 11
+keyStatus.TextSize = 10
 keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 keyStatus.ZIndex = 10002
 keyStatus.Parent = keyBody
 
--- ═══════════ VERIFICAÇÃO DE KEY (RedstoneGuard) ═══════════
+-- ═══════════ VERIFICAÇÃO ═══════════
 function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
 
@@ -2151,7 +2223,7 @@ task.spawn(function()
     end
 end)
 
--- Drag da Key GUI
+-- Drag do Key GUI
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
