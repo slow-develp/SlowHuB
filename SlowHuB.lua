@@ -709,7 +709,7 @@ function updateESP()
                                     local pPeD = peD and w2s(peD.Position)
 
                                     local cor = Config.ESP.Color
-                                    local ESPESSURA_PALITO = 1
+                                    local ESPESSURA_PALITO = 3
 
                                     local function desenhaLinha(frame, p1, p2)
                                         if not p1 or not p2 then
@@ -728,7 +728,7 @@ function updateESP()
                                         local ang = math.deg(math.atan2(-dx2, dy2))
                                         frame.Visible = true
                                         frame.Position = UDim2.new(0, mx, 0, my)
-                                        frame.Size = UDim2.new(0, ESPESSURA_PALITO, 0, dist2)
+                                        frame.Size = UDim2.new(0, ESPESSURA_PALITO, 1, dist2)
                                         frame.Rotation = ang
                                         frame.BackgroundColor3 = cor
                                     end
