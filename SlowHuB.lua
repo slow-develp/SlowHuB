@@ -2254,11 +2254,36 @@ function tryValidateKey()
     task.spawn(function()
         local ok, msg = verifyKeyWithRedstone(typed)
         if ok then
-    keyStatus.TextColor3 = SUCCESS
-    keyStatus.Text = "Key validada com sucesso!"
-    keyValidateBtn.Text = "✅  Validada"
+            keyStatus.TextColor3 = SUCCESS
+            keyStatus.Text = "Key validada com sucesso!"
+            keyValidateBtn.Text = "✅  Validada"
 
-    saveKeyLocal(typed)
+            saveKeyLocal(typed)
+
+            if typed == KEY then
+                setPermanent()
+            end
+
+            task.wait(0.6)
+            keyGui.Enabled = false
+            gui.Enabled = true
+            capsule.Visible = true
+            capsuleBorder.Visible = true
+            main.Visible = false
+            mainBorder.Visible = false
+
+            if not welcomeShown then
+                welcomeShown = true
+                task.wait(0.4)
+                addNotif("Welcome", "Bem-vindo ao Slow Hub, " .. (LocalPlayer.DisplayName or LocalPlayer.Name) .. "!", 6)
+            end
+        else
+            keyStatus.TextColor3 = DANGER
+            keyStatus.Text = tostring(msg or "Key inválida.")
+            keyValidateBtn.Text = "✅  Validar Key"
+        end
+    end)
+end
 
     -- 🔑 MARCA COMO PERMANENTE se a key for a VIP
     if typed == KEY then
