@@ -200,6 +200,54 @@ function saveKeyLocal(key)
     end
 end
 
+function saveExpiresAt(timestamp)
+    if type(writefile) == "function" then
+        pcall(function() writefile("slowhub_expires.txt", tostring(timestamp or "")) end)
+    end
+end
+
+function getExpiresAt()
+    if type(isfile) == "function" and type(readfile) == "function" then
+        local ok = pcall(function() return isfile("slowhub_expires.txt") end)
+        if ok and isfile("slowhub_expires.txt") then
+            local val = readfile("slowhub_expires.txt")
+            return tonumber(val) or val
+        end
+    end
+    return nil
+end
+
+function formatTempoRestante(expiresAt)
+    if not expiresAt or expiresAt == "" or expiresAt == "never" or expiresAt == 0 then
+        return "∞ Permanente"
+    end
+
+    local exp = tonumber(expiresAt)
+    if not exp then return "∞ Permanente" end
+
+    -- Se for timestamp muito grande (ms), converte pra segundos
+    if exp > 99999999999 then exp = math.floor(exp / 1000) end
+
+    local agora = os.time()
+    local restante = exp - agora
+
+    if restante <= 0 then
+        return "⛔ Expirada"
+    end
+
+    local dias = math.floor(restante / 86400)
+    local horas = math.floor((restante % 86400) / 3600)
+    local min = math.floor((restante % 3600) / 60)
+
+    if dias > 0 then
+        return "⏱️ " .. dias .. "d " .. horas .. "h"
+    elseif horas > 0 then
+        return "⏱️ " .. horas .. "h " .. min .. "min"
+    else
+        return "⏱️ " .. min .. "min"
+    end
+end
+
 function getSavedKey()
     if type(isfile) == "function" and type(readfile) == "function" then
         local ok = pcall(function() return isfile(KEY_CONFIG.KeyFile) end)
