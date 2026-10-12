@@ -2144,61 +2144,59 @@ keyStatus.Parent = keyBody
 
 -- ═══════════ VERIFICAÇÃO ═══════════
 function verifyKeyWithRedstone(key)
+function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
 
-    local url = "https://redstoneguard.xyz/api/keys/verify"
-    local body = HttpService:JSONEncode({
-        scriptID = KEY_CONFIG.ScriptID,
-        key = tostring(key)
-    })
-    local headers = {
-        ["Content-Type"] = "application/json",
-        ["x-api-key"] = KEY_CONFIG.ApiKey
-    }
-
-    local response = nil
-
+    -- 🔑 Usa o SDK oficial do RedstoneGuard
+    local sdk = nil
     pcall(function()
-        if type(request) == "function" then
-            local r = request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            if r and r.Body then response = r.Body end
-        elseif type(http_request) == "function" then
-            local r = http_request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            if r and r.Body then response = r.Body end
-        elseif type(syn) == "table" and syn.request then
-            local r = syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            if r and r.Body then response = r.Body end
-        elseif type(http) == "table" and http.request then
-            local r = http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
-            if r and r.Body then response = r.Body end
-        end
+        sdk = loadstring(game:HttpGet("https://redstoneguard.xyz/redstoneguard-sdk.lua"))()
     end)
 
-    if response and type(response) == "string" then
-        local success, data = pcall(function()
-            return HttpService:JSONDecode(response)
+    if sdk then
+        -- Tenta várias formas (dependendo de como o SDK expõe)
+        local ok, result = pcall(function()
+            if sdk.verify then
+                return sdk.verify(key)
+            elseif sdk.verifyKey then
+                return sdk.verifyKey(key)
+            elseif sdk.checkKey then
+                return sdk.checkKey(key)
+            elseif sdk.validateKey then
+                return sdk.validateKey(key)
+            end
+            return nil
         end)
-        if success and type(data) == "table" then
-            if data.valid == true or data.success == true then
-                if data.permanent == true or data.type == "permanent" or data.vip == true then
-                    setPermanent()
-                end
+
+        if ok and result then
+            -- Se retornou true direto
+            if result == true then
                 return true, "Key válida"
             end
-            if data.message then
-                return false, tostring(data.message)
+            -- Se retornou tabela com valid
+            if type(result) == "table" then
+                if result.valid == true or result.success == true then
+                    if result.permanent == true or result.type == "permanent" then
+                        setPermanent()
+                    end
+                    return true, "Key válida"
+                end
+                if result.message then
+                    return false, tostring(result.message)
+                end
             end
         end
     end
 
+    -- Fallback VIP (só aceita a key "SlowHubVIP")
     if key == KEY then
         setPermanent()
         return true, "Key VIP válida"
     end
 
-    return false, "Key inválida ou expirada"
-end
-
+    return false, "Key inválida"
+    end
+    
 function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == "" then
