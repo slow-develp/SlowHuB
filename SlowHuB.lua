@@ -2144,14 +2144,7 @@ keyStatus.Parent = keyBody
 
 -- ═══════════ VERIFICAÇÃO ═══════════
 function verifyKeyWithRedstone(key)
-function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
-
-    -- 🔍 DEBUG: Mostra o que está sendo enviado
-    addNotif("Debug", "ScriptID: " .. tostring(KEY_CONFIG.ScriptID), 3)
-    task.wait(0.5)
-    addNotif("Debug", "ApiKey: " .. tostring(KEY_CONFIG.ApiKey):sub(1, 15) .. "...", 3)
-    task.wait(0.5)
 
     local url = "https://redstoneguard.xyz/api/keys/verify"
     local body = HttpService:JSONEncode({
@@ -2164,35 +2157,24 @@ function verifyKeyWithRedstone(key)
     }
 
     local response = nil
-    local metodo = "nenhum"
 
     pcall(function()
         if type(request) == "function" then
-            metodo = "request"
             local r = request({ Url = url, Method = "POST", Headers = headers, Body = body })
             if r and r.Body then response = r.Body end
         elseif type(http_request) == "function" then
-            metodo = "http_request"
             local r = http_request({ Url = url, Method = "POST", Headers = headers, Body = body })
             if r and r.Body then response = r.Body end
         elseif type(syn) == "table" and syn.request then
-            metodo = "syn.request"
             local r = syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
             if r and r.Body then response = r.Body end
         elseif type(http) == "table" and http.request then
-            metodo = "http.request"
             local r = http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
             if r and r.Body then response = r.Body end
         end
     end)
 
-    -- 🔍 DEBUG: Mostra qual método usou e se teve resposta
-    addNotif("Debug", "Método: " .. metodo, 4)
-    task.wait(0.5)
-    addNotif("Debug", "Resposta: " .. tostring(response and response:sub(1, 80) or "nil"), 6)
-    task.wait(0.5)
-
-    if response then
+    if response and type(response) == "string" then
         local success, data = pcall(function()
             return HttpService:JSONDecode(response)
         end)
@@ -2214,8 +2196,8 @@ function verifyKeyWithRedstone(key)
         return true, "Key VIP válida"
     end
 
-    return false, "Não foi possível verificar. Verifique sua conexão."
-    end
+    return false, "Key inválida ou expirada"
+end
 
 function tryValidateKey()
     local typed = keyInput.Text or ""
