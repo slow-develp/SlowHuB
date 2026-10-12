@@ -3222,12 +3222,27 @@ profStatus.Parent = profileCard
 -- 🔑 Atualiza o badge + tempo restante
 task.spawn(function()
     task.wait(0.3)
+-- 🔑 Atualiza o badge
+task.spawn(function()
+    task.wait(0.3)
     if profBadge and profBadge.Parent then
-        ...
-    end
-
-    while task.wait(1) do
-        ...
+        if isPermanent() then
+            profBadge.Text = "👑 PERMANENTE"
+            profBadge.BackgroundColor3 = GOLD_COLOR
+            profBadge.TextColor3 = Color3.fromRGB(30, 20, 0)
+            if profStatus and profStatus.Parent then
+                profStatus.Text = "♾️ Sem expiração"
+                profStatus.TextColor3 = GOLD_COLOR
+            end
+        else
+            profBadge.Text = "FREE USER"
+            profBadge.BackgroundColor3 = ACCENT
+            profBadge.TextColor3 = Color3.new(1, 1, 1)
+            if profStatus and profStatus.Parent then
+                profStatus.Text = "🟢 Ativa"
+                profStatus.TextColor3 = SUCCESS
+            end
+        end
     end
 end)
         else
