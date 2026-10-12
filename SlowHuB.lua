@@ -2229,14 +2229,19 @@ function verifyKeyWithRedstone(key)
         end)
 
         if ok and result then
-            if result.valid == true then
-                -- Se nunca expira, marca como PERMANENTE
-                if result.expires_at == nil 
-                or result.expires_at == "never" 
-                or result.expires_at == 0 then
-                    setPermanent()
-                end
-                return true, "Key válida"
+    if result.valid == true then
+        -- Salva a expiração
+        if result.expires_at then
+            saveExpiresAt(result.expires_at)
+        end
+
+        -- Se nunca expira, marca como PERMANENTE
+        if result.expires_at == nil 
+        or result.expires_at == "never" 
+        or result.expires_at == 0 then
+            setPermanent()
+        end
+        return true, "Key válida"
             else
                 return false, tostring(result.reason or "Key inválida")
             end
