@@ -2146,17 +2146,43 @@ keyStatus.Parent = keyBody
 function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
 
-    local ok, response = pcall(function()
-        return game:HttpGet(
-            "https://redstoneguard.xyz/api/keys/verify?key=" .. tostring(key)
-        )
+    local url = "https://redstoneguard.xyz/api/keys/verify"
+    local body = HttpService:JSONEncode({
+        scriptID = KEY_CONFIG.ScriptID,
+        key = tostring(key)
+    })
+    local headers = {
+        ["Content-Type"] = "application/json",
+        ["x-api-key"] = KEY_CONFIG.ApiKey
+    }
+
+    local response = nil
+
+    pcall(function()
+        if type(request) == "function" then
+            local r = request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            if r and r.Body then response = r.Body end
+        elseif type(http_request) == "function" then
+            local r = http_request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            if r and r.Body then response = r.Body end
+        elseif type(syn) == "table" and syn.request then
+            local r = syn.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            if r and r.Body then response = r.Body end
+        elseif type(http) == "table" and http.request then
+            local r = http.request({ Url = url, Method = "POST", Headers = headers, Body = body })
+            if r and r.Body then response = r.Body end
+        end
     end)
-    if ok and response then
+
+    if response then
         local success, data = pcall(function()
             return HttpService:JSONDecode(response)
         end)
         if success and type(data) == "table" then
             if data.valid == true or data.success == true then
+                if data.permanent == true or data.type == "permanent" or data.vip == true then
+                    setPermanent()
+                end
                 return true, "Key válida"
             end
             if data.message then
@@ -2166,10 +2192,11 @@ function verifyKeyWithRedstone(key)
     end
 
     if key == KEY then
-        return true, "Key válida"
+        setPermanent()
+        return true, "Key VIP válida"
     end
 
-    return false, "Key inválida ou expirada"
+    return false, "Não foi possível verificar. Verifique sua conexão."
 end
 
 function tryValidateKey()
