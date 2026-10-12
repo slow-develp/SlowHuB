@@ -2184,9 +2184,16 @@ function tryValidateKey()
     task.spawn(function()
         local ok, msg = verifyKeyWithRedstone(typed)
         if ok then
-            keyStatus.TextColor3 = SUCCESS
-            keyStatus.Text = "Key validada com sucesso!"
-            keyValidateBtn.Text = "✅  Validada"
+    keyStatus.TextColor3 = SUCCESS
+    keyStatus.Text = "Key validada com sucesso!"
+    keyValidateBtn.Text = "✅  Validada"
+
+    saveKeyLocal(typed)
+
+    -- 🔑 MARCA COMO PERMANENTE se a key for a VIP
+    if typed == KEY then
+        setPermanent()
+                end
 
             saveKeyLocal(typed)
 
