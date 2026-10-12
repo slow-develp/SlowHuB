@@ -3226,3 +3226,1627 @@ task.spawn(function()
         end
     end
 end)
+-- ═══════════ PÁGINA JOGADORES ═══════════
+playersPage = createPage("Jogadores")
+addPageTitle(playersPage, "Jogadores", "Lista de jogadores no servidor")
+
+searchBar = Instance.new("Frame")
+searchBar.Size = UDim2.new(1, -24, 0, 30)
+searchBar.Position = UDim2.new(0, 12, 0, 50)
+searchBar.BackgroundColor3 = Color3.fromRGB(28, 28, 34)
+searchBar.BackgroundTransparency = 0.4
+searchBar.BorderSizePixel = 0
+searchBar.ZIndex = 120
+searchBar.Parent = playersPage
+Instance.new("UICorner", searchBar).CornerRadius = UDim.new(0, 8)
+
+searchIcon = Instance.new("ImageLabel")
+searchIcon.Size = UDim2.new(0, 14, 0, 14)
+searchIcon.Position = UDim2.new(0, 8, 0.5, -7)
+searchIcon.BackgroundTransparency = 1
+searchIcon.Image = ICONS.Person
+searchIcon.ImageColor3 = TEXTDIM
+searchIcon.ZIndex = 130
+searchIcon.Parent = searchBar
+
+searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -30, 1, 0)
+searchBox.Position = UDim2.new(0, 28, 0, 0)
+searchBox.BackgroundTransparency = 1
+searchBox.Text = ""
+searchBox.PlaceholderText = "Buscar jogador..."
+searchBox.PlaceholderColor3 = TEXTDIM
+searchBox.TextColor3 = TEXT
+searchBox.Font = Enum.Font.Gotham
+searchBox.TextSize = 11
+searchBox.TextXAlignment = Enum.TextXAlignment.Left
+searchBox.ClearTextOnFocus = false
+searchBox.ZIndex = 130
+searchBox.Parent = searchBar
+
+playerScroll = Instance.new("ScrollingFrame")
+playerScroll.Size = UDim2.new(1, -24, 1, -90)
+playerScroll.Position = UDim2.new(0, 12, 0, 86)
+playerScroll.BackgroundTransparency = 1
+playerScroll.BorderSizePixel = 0
+playerScroll.ScrollBarThickness = 3
+playerScroll.ScrollBarImageColor3 = ACCENT
+playerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+playerScroll.ZIndex = 120
+playerScroll.Parent = playersPage
+
+playerLayout = Instance.new("UIListLayout", playerScroll)
+playerLayout.SortOrder = Enum.SortOrder.LayoutOrder
+playerLayout.Padding = UDim.new(0, 4)
+
+playerPad = Instance.new("UIPadding", playerScroll)
+playerPad.PaddingTop = UDim.new(0, 2)
+playerPad.PaddingBottom = UDim.new(0, 6)
+playerPad.PaddingLeft = UDim.new(0, 2)
+playerPad.PaddingRight = UDim.new(0, 2)
+
+playerCards = {}
+
+function createPlayerCard(plr, order)
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, -4, 0, 40)
+    card.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+    card.BackgroundTransparency = 0.3
+    card.BorderSizePixel = 0
+    card.LayoutOrder = order
+    card.ZIndex = 130
+    card.Parent = playerScroll
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+
+    local avatar = Instance.new("ImageLabel")
+    avatar.Size = UDim2.new(0, 28, 0, 28)
+    avatar.Position = UDim2.new(0, 8, 0.5, -14)
+    avatar.BackgroundColor3 = CARD
+    avatar.BorderSizePixel = 0
+    avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=100&h=100"
+    avatar.ZIndex = 140
+    avatar.Parent = card
+    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -140, 0, 14)
+    nameLbl.Position = UDim2.new(0, 44, 0, 5)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = plr.DisplayName or plr.Name
+    nameLbl.TextColor3 = TEXT
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextSize = 11
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.ZIndex = 140
+    nameLbl.Parent = card
+
+    local userLbl = Instance.new("TextLabel")
+    userLbl.Size = UDim2.new(1, -140, 0, 12)
+    userLbl.Position = UDim2.new(0, 44, 0, 20)
+    userLbl.BackgroundTransparency = 1
+    userLbl.Text = "@" .. plr.Name
+    userLbl.TextColor3 = TEXTDIM
+    userLbl.Font = Enum.Font.Gotham
+    userLbl.TextSize = 9
+    userLbl.TextXAlignment = Enum.TextXAlignment.Left
+    userLbl.ZIndex = 140
+    userLbl.Parent = card
+
+    local gotoBtn = Instance.new("TextButton")
+    gotoBtn.Size = UDim2.new(0, 60, 0, 24)
+    gotoBtn.Position = UDim2.new(1, -68, 0.5, -12)
+    gotoBtn.BackgroundColor3 = TOGGLE_ON_COLOR
+    gotoBtn.Text = "Goto"
+    gotoBtn.TextColor3 = Color3.new(1, 1, 1)
+    gotoBtn.Font = Enum.Font.GothamBold
+    gotoBtn.TextSize = 10
+    gotoBtn.AutoButtonColor = false
+    gotoBtn.ZIndex = 140
+    gotoBtn.Parent = card
+    Instance.new("UICorner", gotoBtn).CornerRadius = UDim.new(0, 6)
+
+    gotoBtn.MouseButton1Click:Connect(function()
+        local ok = gotoPlayer(plr)
+        if ok then
+            addNotif("Goto", "Teleportado para " .. plr.Name)
+        else
+            addNotif("Erro", "Não foi possível teleportar.")
+        end
+    end)
+
+    playerCards[plr.UserId] = {
+        frame = card,
+        name = string.lower(plr.DisplayName or plr.Name),
+        username = string.lower(plr.Name)
+    }
+end
+
+function refreshPlayers()
+    for _, data in pairs(playerCards) do
+        if data.frame then data.frame:Destroy() end
+    end
+    playerCards = {}
+    local order = 0
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            order += 1
+            createPlayerCard(plr, order)
+        end
+    end
+end
+
+refreshPlayers()
+
+searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local q = string.lower(searchBox.Text or "")
+    for _, data in pairs(playerCards) do
+        if data.frame and data.frame.Parent then
+            local match = q == ""
+                or string.find(data.name, q, 1, true)
+                or string.find(data.username, q, 1, true)
+            data.frame.Visible = match
+        end
+    end
+end)
+
+Players.PlayerAdded:Connect(function()
+    task.wait(1)
+    refreshPlayers()
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    local data = playerCards[plr.UserId]
+    if data and data.frame then data.frame:Destroy() end
+    playerCards[plr.UserId] = nil
+end)
+-- ═══════════ PÁGINA MOVIMENTO ═══════════
+movementPage = createPage("Movimento")
+addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
+
+noclipCard = makeCard(movementPage, 56, 32)
+makeLabel(noclipCard, "Noclip", 10, 200)
+makeToggle(noclipCard, Config.Noclip.Enabled, function(s)
+    Config.Noclip.Enabled = s
+    setNoclip(s)
+end)
+
+speedCard = makeCard(movementPage, 94, 32)
+makeLabel(speedCard, "Speed", 10, 150)
+speedInput = makeInput(speedCard, 6, tostring(Config.Speed.Value), 50, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Speed.Value = math.clamp(n, 16, 200) end
+end)
+speedInput.Position = UDim2.new(1, -110, 0.5, -12)
+makeToggle(speedCard, Config.Speed.Enabled, function(s)
+    Config.Speed.Enabled = s
+    setSpeed(s)
+end)
+
+flyCard = makeCard(movementPage, 132, 32)
+makeLabel(flyCard, "Fly", 10, 100)
+flySpeedInput = makeInput(flyCard, 6, tostring(Config.Fly.Speed), 50, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Fly.Speed = math.clamp(n, 10, 500) end
+end)
+flySpeedInput.Position = UDim2.new(1, -110, 0.5, -12)
+makeToggle(flyCard, Config.Fly.Enabled, function(s)
+    Config.Fly.Enabled = s
+    setFly(s)
+end)
+
+jumpCard = makeCard(movementPage, 170, 32)
+makeLabel(jumpCard, "Infinite Jump", 10, 200)
+makeToggle(jumpCard, Config.InfiniteJump.Enabled, function(s)
+    Config.InfiniteJump.Enabled = s
+    setInfJump(s)
+end)
+
+-- ═══════════ PÁGINA FLING ═══════════
+flingPage = createPage("Fling")
+addPageTitle(flingPage, "Fling", "Selecione os jogadores pra arremessar")
+
+flingSearchBar = Instance.new("Frame")
+flingSearchBar.Size = UDim2.new(1, -24, 0, 32)
+flingSearchBar.Position = UDim2.new(0, 12, 0, 50)
+flingSearchBar.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+flingSearchBar.BackgroundTransparency = 0.2
+flingSearchBar.BorderSizePixel = 0
+flingSearchBar.ZIndex = 120
+flingSearchBar.Parent = flingPage
+Instance.new("UICorner", flingSearchBar).CornerRadius = UDim.new(0, 10)
+local sbStroke = Instance.new("UIStroke", flingSearchBar)
+sbStroke.Color = PURPLE_BORDER
+sbStroke.Thickness = 1
+sbStroke.Transparency = 0.6
+
+flingSearchIcon = Instance.new("ImageLabel")
+flingSearchIcon.Size = UDim2.new(0, 14, 0, 14)
+flingSearchIcon.Position = UDim2.new(0, 10, 0.5, -7)
+flingSearchIcon.BackgroundTransparency = 1
+flingSearchIcon.Image = ICONS.Person
+flingSearchIcon.ImageColor3 = PURPLE_BORDER
+flingSearchIcon.ZIndex = 130
+flingSearchIcon.Parent = flingSearchBar
+
+flingSearchBox = Instance.new("TextBox")
+flingSearchBox.Size = UDim2.new(1, -32, 1, 0)
+flingSearchBox.Position = UDim2.new(0, 30, 0, 0)
+flingSearchBox.BackgroundTransparency = 1
+flingSearchBox.Text = ""
+flingSearchBox.PlaceholderText = "Buscar jogador..."
+flingSearchBox.PlaceholderColor3 = TEXTDIM
+flingSearchBox.TextColor3 = TEXT
+flingSearchBox.Font = Enum.Font.Gotham
+flingSearchBox.TextSize = 11
+flingSearchBox.TextXAlignment = Enum.TextXAlignment.Left
+flingSearchBox.ClearTextOnFocus = false
+flingSearchBox.ZIndex = 130
+flingSearchBox.Parent = flingSearchBar
+
+flingList = Instance.new("ScrollingFrame")
+flingList.Size = UDim2.new(1, -24, 1, -220)
+flingList.Position = UDim2.new(0, 12, 0, 88)
+flingList.BackgroundTransparency = 1
+flingList.BorderSizePixel = 0
+flingList.ScrollBarThickness = 3
+flingList.ScrollBarImageColor3 = ACCENT
+flingList.CanvasSize = UDim2.new(0, 0, 0, 0)
+flingList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+flingList.ZIndex = 120
+flingList.Parent = flingPage
+
+flingListLayout = Instance.new("UIListLayout", flingList)
+flingListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+flingListLayout.Padding = UDim.new(0, 6)
+
+flingListPad = Instance.new("UIPadding", flingList)
+flingListPad.PaddingTop = UDim.new(0, 4)
+flingListPad.PaddingBottom = UDim.new(0, 6)
+flingListPad.PaddingLeft = UDim.new(0, 4)
+flingListPad.PaddingRight = UDim.new(0, 4)
+
+flingSelectedTargets = {}
+flingCards = {}
+
+function updateFlingStatus()
+    local count = 0
+    for _ in pairs(flingSelectedTargets) do count = count + 1 end
+    if flingActiveStatus and flingActiveStatus.Parent then
+        if flingActive then
+            flingActiveStatus.Text = "🟢  Flingando " .. count .. " jogador(es)"
+            flingActiveStatus.TextColor3 = Color3.fromRGB(80, 220, 120)
+        else
+            flingActiveStatus.Text = "⚪  " .. count .. " jogador(es) selecionado(s)"
+            flingActiveStatus.TextColor3 = TEXTDIM
+        end
+    end
+end
+
+function createFlingCard(plr, order)
+    if plr == LocalPlayer then return end
+
+    local card = Instance.new("Frame")
+    card.Size = UDim2.new(1, -8, 0, 46)
+    card.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+    card.BackgroundTransparency = 0.15
+    card.BorderSizePixel = 0
+    card.LayoutOrder = order
+    card.ZIndex = 130
+    card.Parent = flingList
+    Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
+
+    local cardStroke = Instance.new("UIStroke", card)
+    cardStroke.Color = PURPLE_BORDER
+    cardStroke.Thickness = 1
+    cardStroke.Transparency = 0.7
+
+    local avatar = Instance.new("ImageLabel")
+    avatar.Size = UDim2.new(0, 32, 0, 32)
+    avatar.Position = UDim2.new(0, 8, 0.5, -16)
+    avatar.BackgroundColor3 = CARD
+    avatar.BorderSizePixel = 0
+    avatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=100&h=100"
+    avatar.ZIndex = 140
+    avatar.Parent = card
+    Instance.new("UICorner", avatar).CornerRadius = UDim.new(1, 0)
+    local avStroke = Instance.new("UIStroke", avatar)
+    avStroke.Color = PURPLE_BORDER
+    avStroke.Thickness = 1.5
+    avStroke.Transparency = 0.3
+
+    local nameLbl = Instance.new("TextLabel")
+    nameLbl.Size = UDim2.new(1, -100, 0, 15)
+    nameLbl.Position = UDim2.new(0, 48, 0, 6)
+    nameLbl.BackgroundTransparency = 1
+    nameLbl.Text = plr.DisplayName or plr.Name
+    nameLbl.TextColor3 = TEXT
+    nameLbl.Font = Enum.Font.GothamBold
+    nameLbl.TextSize = 11
+    nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+    nameLbl.ZIndex = 140
+    nameLbl.Parent = card
+
+    local userLbl = Instance.new("TextLabel")
+    userLbl.Size = UDim2.new(1, -100, 0, 12)
+    userLbl.Position = UDim2.new(0, 48, 0, 22)
+    userLbl.BackgroundTransparency = 1
+    userLbl.Text = "@" .. plr.Name
+    userLbl.TextColor3 = TEXTDIM
+    userLbl.Font = Enum.Font.Gotham
+    userLbl.TextSize = 9
+    userLbl.TextXAlignment = Enum.TextXAlignment.Left
+    userLbl.ZIndex = 140
+    userLbl.Parent = card
+
+    local checkBtn = Instance.new("TextButton")
+    checkBtn.Size = UDim2.new(0, 80, 0, 28)
+    checkBtn.Position = UDim2.new(1, -88, 0.5, -14)
+    checkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+    checkBtn.Text = "Selecionar"
+    checkBtn.TextColor3 = TEXTDIM
+    checkBtn.Font = Enum.Font.GothamBold
+    checkBtn.TextSize = 10
+    checkBtn.AutoButtonColor = false
+    checkBtn.ZIndex = 140
+    checkBtn.Parent = card
+    Instance.new("UICorner", checkBtn).CornerRadius = UDim.new(0, 7)
+    local btnStroke = Instance.new("UIStroke", checkBtn)
+    btnStroke.Color = PURPLE_BORDER
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.5
+
+    checkBtn.MouseButton1Click:Connect(function()
+        if flingSelectedTargets[plr.UserId] then
+            flingSelectedTargets[plr.UserId] = nil
+            checkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+            checkBtn.TextColor3 = TEXTDIM
+            checkBtn.Text = "Selecionar"
+            card.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+            cardStroke.Color = PURPLE_BORDER
+        else
+            flingSelectedTargets[plr.UserId] = plr
+            checkBtn.BackgroundColor3 = DANGER
+            checkBtn.TextColor3 = Color3.new(1, 1, 1)
+            checkBtn.Text = "✓ Selecionado"
+            card.BackgroundColor3 = Color3.fromRGB(45, 20, 25)
+            cardStroke.Color = DANGER
+        end
+        updateFlingStatus()
+    end)
+
+    flingCards[plr.UserId] = {
+        frame = card,
+        checkBtn = checkBtn,
+        cardStroke = cardStroke,
+        name = string.lower(plr.DisplayName or plr.Name),
+        username = string.lower(plr.Name)
+    }
+end
+
+function refreshFlingList()
+    for _, data in pairs(flingCards) do
+        if data.frame then data.frame:Destroy() end
+    end
+    flingCards = {}
+    flingSelectedTargets = {}
+    local order = 0
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            order += 1
+            createFlingCard(plr, order)
+        end
+    end
+    updateFlingStatus()
+end
+
+flingSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local q = string.lower(flingSearchBox.Text or "")
+    for _, data in pairs(flingCards) do
+        if data.frame and data.frame.Parent then
+            local match = q == ""
+                or string.find(data.name, q, 1, true)
+                or string.find(data.username, q, 1, true)
+            data.frame.Visible = match
+        end
+    end
+end)
+
+flingActiveStatus = Instance.new("TextLabel")
+flingActiveStatus.Size = UDim2.new(1, -24, 0, 20)
+flingActiveStatus.Position = UDim2.new(0, 12, 1, -125)
+flingActiveStatus.BackgroundTransparency = 1
+flingActiveStatus.Text = "⚪  0 jogador(es) selecionado(s)"
+flingActiveStatus.TextColor3 = TEXTDIM
+flingActiveStatus.Font = Enum.Font.GothamBold
+flingActiveStatus.TextSize = 11
+flingActiveStatus.TextXAlignment = Enum.TextXAlignment.Left
+flingActiveStatus.ZIndex = 130
+flingActiveStatus.Parent = flingPage
+
+flingStartBtn = Instance.new("TextButton")
+flingStartBtn.Size = UDim2.new(1, -24, 0, 34)
+flingStartBtn.Position = UDim2.new(0, 12, 1, -97)
+flingStartBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+flingStartBtn.Text = "▶  INICIAR FLING"
+flingStartBtn.TextColor3 = Color3.new(1, 1, 1)
+flingStartBtn.Font = Enum.Font.GothamBold
+flingStartBtn.TextSize = 12
+flingStartBtn.AutoButtonColor = false
+flingStartBtn.ZIndex = 130
+flingStartBtn.Parent = flingPage
+Instance.new("UICorner", flingStartBtn).CornerRadius = UDim.new(0, 8)
+local startStroke = Instance.new("UIStroke", flingStartBtn)
+startStroke.Color = Color3.fromRGB(0, 255, 100)
+startStroke.Thickness = 1.5
+startStroke.Transparency = 0.5
+
+flingStartBtn.MouseEnter:Connect(function()
+    TweenService:Create(flingStartBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 220, 0)}):Play()
+end)
+flingStartBtn.MouseLeave:Connect(function()
+    TweenService:Create(flingStartBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(0, 170, 0)}):Play()
+end)
+
+flingStartBtn.MouseButton1Click:Connect(function()
+    if flingActive then return end
+    local count = 0
+    for _ in pairs(flingSelectedTargets) do count = count + 1 end
+    if count == 0 then
+        addNotif("Fling", "Nenhum jogador selecionado.", 3)
+        return
+    end
+
+    Config.AntiFling.Enabled = false
+    setAntiFling(false)
+    if antiFlingToggle then
+        antiFlingToggle:SetAttribute("ToggleState", false)
+        antiFlingToggle.BackgroundColor3 = CARD
+        antiFlingToggle.Text = "OFF"
+    end
+
+    flingActive = true
+    updateFlingStatus()
+    addNotif("Fling", "Iniciado em " .. count .. " jogador(es).", 3)
+
+    task.spawn(function()
+        while flingActive do
+            for userId, plr in pairs(flingSelectedTargets) do
+                if plr and plr.Parent then
+                    pcall(function() SkidFling(plr) end)
+
+                    flingSelectedTargets[userId] = nil
+                    local data = flingCards[userId]
+                    if data and data.checkBtn then
+                        data.checkBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+                        data.checkBtn.TextColor3 = TEXTDIM
+                        data.checkBtn.Text = "Selecionar"
+                        if data.frame then
+                            data.frame.BackgroundColor3 = Color3.fromRGB(24, 24, 30)
+                        end
+                        if data.cardStroke then
+                            data.cardStroke.Color = PURPLE_BORDER
+                        end
+                    end
+                    updateFlingStatus()
+
+                    task.wait(0.05)
+                end
+            end
+
+            local restantes = 0
+            for _ in pairs(flingSelectedTargets) do restantes = restantes + 1 end
+            if restantes == 0 then
+                flingActive = false
+                Config.AntiFling.Enabled = true
+                setAntiFling(true)
+                if antiFlingToggle then
+                    antiFlingToggle:SetAttribute("ToggleState", true)
+                    antiFlingToggle.BackgroundColor3 = TOGGLE_ON_COLOR
+                    antiFlingToggle.Text = "ON"
+                end
+                updateFlingStatus()
+                addNotif("Fling", "Todos flingados. Anti-Fling reativado.", 3)
+                break
+            end
+
+            task.wait(0.3)
+        end
+    end)
+end)
+
+flingStopBtn = Instance.new("TextButton")
+flingStopBtn.Size = UDim2.new(1, -24, 0, 34)
+flingStopBtn.Position = UDim2.new(0, 12, 1, -58)
+flingStopBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+flingStopBtn.Text = "■  PARAR FLING"
+flingStopBtn.TextColor3 = Color3.new(1, 1, 1)
+flingStopBtn.Font = Enum.Font.GothamBold
+flingStopBtn.TextSize = 12
+flingStopBtn.AutoButtonColor = false
+flingStopBtn.ZIndex = 130
+flingStopBtn.Parent = flingPage
+Instance.new("UICorner", flingStopBtn).CornerRadius = UDim.new(0, 8)
+local stopStroke = Instance.new("UIStroke", flingStopBtn)
+stopStroke.Color = Color3.fromRGB(255, 80, 80)
+stopStroke.Thickness = 1.5
+stopStroke.Transparency = 0.5
+
+flingStopBtn.MouseEnter:Connect(function()
+    TweenService:Create(flingStopBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(220, 0, 0)}):Play()
+end)
+flingStopBtn.MouseLeave:Connect(function()
+    TweenService:Create(flingStopBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(170, 0, 0)}):Play()
+end)
+
+flingStopBtn.MouseButton1Click:Connect(function()
+    if not flingActive then return end
+    flingActive = false
+
+    Config.AntiFling.Enabled = true
+    setAntiFling(true)
+    if antiFlingToggle then
+        antiFlingToggle:SetAttribute("ToggleState", true)
+        antiFlingToggle.BackgroundColor3 = TOGGLE_ON_COLOR
+        antiFlingToggle.Text = "ON"
+    end
+
+    updateFlingStatus()
+    addNotif("Fling", "Parado. Anti-Fling reativado.", 3)
+end)
+
+refreshFlingList()
+
+Players.PlayerAdded:Connect(function()
+    task.wait(1)
+    refreshFlingList()
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    local data = flingCards[plr.UserId]
+    if data and data.frame then data.frame:Destroy() end
+    flingCards[plr.UserId] = nil
+    flingSelectedTargets[plr.UserId] = nil
+    updateFlingStatus()
+end)
+-- ═══════════ PÁGINA TELEPORTE ═══════════
+tpPage = createPage("Teleporte")
+addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
+
+savedList = Instance.new("ScrollingFrame")
+savedList.Size = UDim2.new(1, -24, 1, -170)
+savedList.Position = UDim2.new(0, 12, 0, 50)
+savedList.BackgroundTransparency = 1
+savedList.BorderSizePixel = 0
+savedList.ScrollBarThickness = 3
+savedList.ScrollBarImageColor3 = ACCENT
+savedList.CanvasSize = UDim2.new(0, 0, 0, 0)
+savedList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+savedList.ZIndex = 120
+savedList.Parent = tpPage
+
+savedLayout = Instance.new("UIListLayout", savedList)
+savedLayout.SortOrder = Enum.SortOrder.LayoutOrder
+savedLayout.Padding = UDim.new(0, 4)
+
+savedSlots = {}
+
+function refreshSavedSlots()
+    for _, obj in ipairs(savedList:GetChildren()) do
+        if obj:IsA("Frame") then obj:Destroy() end
+    end
+    local order = 0
+    for i, cf in pairs(savedSlots) do
+        order += 1
+        local card = Instance.new("Frame")
+        card.Size = UDim2.new(1, -4, 0, 32)
+        card.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+        card.BackgroundTransparency = 0.3
+        card.BorderSizePixel = 0
+        card.LayoutOrder = order
+        card.ZIndex = 130
+        card.Parent = savedList
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 8)
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, -130, 1, 0)
+        lbl.Position = UDim2.new(0, 10, 0, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "Slot " .. i
+        lbl.TextColor3 = TEXT
+        lbl.Font = Enum.Font.GothamBold
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.ZIndex = 140
+        lbl.Parent = card
+
+        local goBtn = Instance.new("TextButton")
+        goBtn.Size = UDim2.new(0, 44, 0, 22)
+        goBtn.Position = UDim2.new(1, -100, 0.5, -11)
+        goBtn.BackgroundColor3 = ACCENT
+        goBtn.Text = "Ir"
+        goBtn.TextColor3 = Color3.new(1, 1, 1)
+        goBtn.Font = Enum.Font.GothamBold
+        goBtn.TextSize = 9
+        goBtn.AutoButtonColor = false
+        goBtn.ZIndex = 140
+        goBtn.Parent = card
+        Instance.new("UICorner", goBtn).CornerRadius = UDim.new(0, 6)
+        goBtn.MouseButton1Click:Connect(function()
+            if gotoPosition(i) then
+                addNotif("Teleporte", "Foi para o slot " .. i)
+            end
+        end)
+
+        local delBtn = Instance.new("TextButton")
+        delBtn.Size = UDim2.new(0, 44, 0, 22)
+        delBtn.Position = UDim2.new(1, -52, 0.5, -11)
+        delBtn.BackgroundColor3 = DANGER
+        delBtn.Text = "X"
+        delBtn.TextColor3 = Color3.new(1, 1, 1)
+        delBtn.Font = Enum.Font.GothamBold
+        delBtn.TextSize = 9
+        delBtn.AutoButtonColor = false
+        delBtn.ZIndex = 140
+        delBtn.Parent = card
+        Instance.new("UICorner", delBtn).CornerRadius = UDim.new(0, 6)
+        delBtn.MouseButton1Click:Connect(function()
+            savedSlots[i] = nil
+            savedPositions[i] = nil
+            refreshSavedSlots()
+            addNotif("Teleporte", "Slot " .. i .. " removido.")
+        end)
+    end
+end
+
+saveBtn = makeButton(tpPage, "Salvar Posição", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
+    local nextSlot = 1
+    while savedSlots[nextSlot] do nextSlot += 1 end
+    if savePosition(nextSlot) then
+        savedSlots[nextSlot] = true
+        refreshSavedSlots()
+        addNotif("Teleporte", "Posição salva no slot " .. nextSlot)
+    end
+end)
+saveBtn.Position = UDim2.new(0, 12, 1, -108)
+
+resetBtn = makeButton(tpPage, "Resetar Todos", 0, 155, 26, Color3.fromRGB(35, 35, 42), function()
+    savedSlots = {}
+    savedPositions = {}
+    refreshSavedSlots()
+    addNotif("Teleporte", "Todos os slots foram resetados.")
+end)
+resetBtn.Position = UDim2.new(0, 12, 1, -76)
+
+removeHint = makeButton(tpPage, "Remover Slot (X)", 0, 155, 26, Color3.fromRGB(60, 25, 30), function()
+    addNotif("Remover Slot", "Clique no X vermelho ao lado do slot.")
+end)
+removeHint.Position = UDim2.new(0, 12, 1, -44)
+
+-- ═══════════ PÁGINA VISUAL ═══════════
+visualPage = createPage("Visual")
+addPageTitle(visualPage, "Visual", "ESP, Fullbright, Paletas")
+
+espCard = makeCard(visualPage, 56, 32)
+makeLabel(espCard, "ESP", 10, 200)
+makeToggle(espCard, Config.ESP.Enabled, function(s) Config.ESP.Enabled = s end)
+
+espNameCard = makeCard(visualPage, 94, 32)
+makeLabel(espNameCard, "ESP • Mostrar Nome", 10, 200)
+makeToggle(espNameCard, Config.ESP.ShowName, function(s) Config.ESP.ShowName = s end)
+
+espDistCard = makeCard(visualPage, 132, 32)
+makeLabel(espDistCard, "ESP • Mostrar Distância", 10, 200)
+makeToggle(espDistCard, Config.ESP.ShowDistance, function(s) Config.ESP.ShowDistance = s end)
+
+espHealthCard = makeCard(visualPage, 170, 32)
+makeLabel(espHealthCard, "ESP • Mostrar Vida", 10, 200)
+makeToggle(espHealthCard, Config.ESP.ShowHealth, function(s) Config.ESP.ShowHealth = s end)
+
+espHLCard = makeCard(visualPage, 208, 32)
+makeLabel(espHLCard, "ESP • Boneco Palito", 10, 240)
+makeToggle(espHLCard, Config.ESP.ShowHighlight, function(s) Config.ESP.ShowHighlight = s end)
+
+espTMCard = makeCard(visualPage, 246, 32)
+makeLabel(espTMCard, "ESP • TeamCheck", 10, 200)
+makeToggle(espTMCard, Config.ESP.TeamCheck, function(s) Config.ESP.TeamCheck = s end)
+
+espLinesCard = makeCard(visualPage, 284, 32)
+makeLabel(espLinesCard, "ESP • Linhas (tracer)", 10, 200)
+makeToggle(espLinesCard, Config.ESP.ShowLines, function(s) Config.ESP.ShowLines = s end)
+
+fbCard = makeCard(visualPage, 322, 32)
+makeLabel(fbCard, "Fullbright", 10, 200)
+makeToggle(fbCard, Config.Fullbright.Enabled, function(s)
+    Config.Fullbright.Enabled = s
+    setFullbright(s)
+end)
+
+makeColorPalette(visualPage, 372, "🎨 Cor do ESP (Box/Linha)", Config.ESP.Color, function(cor)
+    Config.ESP.Color = cor
+end)
+
+makeColorPalette(visualPage, 480, "🎯 Cor do FOV", Config.Aimbot.FOVColor, function(cor)
+    Config.Aimbot.FOVColor = cor
+end)
+-- ═══════════ PÁGINA HITBOX ═══════════
+hitboxPage = createPage("Hitbox")
+addPageTitle(hitboxPage, "Hitbox", "Quadrado invisível no HRP")
+
+hbCard = makeCard(hitboxPage, 56, 32)
+makeLabel(hbCard, "Hitbox Expander", 10, 200)
+makeToggle(hbCard, Config.Hitbox.Enabled, function(s)
+    Config.Hitbox.Enabled = s
+    setHitbox(s)
+end)
+
+hbSizeCard = makeCard(hitboxPage, 94, 32)
+makeLabel(hbSizeCard, "Tamanho (1 - 500)", 10, 150)
+hbSizeInput = makeInput(hbSizeCard, 6, tostring(Config.Hitbox.Size), 60, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Hitbox.Size = math.clamp(n, 1, 500) end
+end)
+hbSizeInput.Position = UDim2.new(1, -80, 0.5, -12)
+
+-- ═══════════ PÁGINA MIRA ═══════════
+miraPage = createPage("Mira")
+addPageTitle(miraPage, "Mira", "Aimbot, FOV, WallCheck")
+
+aimCard = makeCard(miraPage, 56, 32)
+makeLabel(aimCard, "Aimbot", 10, 200)
+makeToggle(aimCard, Config.Aimbot.Enabled, function(s)
+    Config.Aimbot.Enabled = s
+    if s then startAimbot() end
+end)
+
+aimShotCard = makeCard(miraPage, 94, 32)
+makeLabel(aimShotCard, "Aimbot • Auto Shot", 10, 200)
+makeToggle(aimShotCard, Config.Aimbot.AutoShot, function(s) Config.Aimbot.AutoShot = s end)
+
+aimReloadCard = makeCard(miraPage, 132, 32)
+makeLabel(aimReloadCard, "Aimbot • Auto Reload", 10, 200)
+makeToggle(aimReloadCard, Config.Aimbot.AutoReload, function(s) Config.Aimbot.AutoReload = s end)
+
+aimTMCard = makeCard(miraPage, 170, 32)
+makeLabel(aimTMCard, "Aimbot • TeamCheck", 10, 200)
+makeToggle(aimTMCard, Config.Aimbot.TeamCheck, function(s) Config.Aimbot.TeamCheck = s end)
+
+aimWCCard = makeCard(miraPage, 208, 32)
+makeLabel(aimWCCard, "Aimbot • WallCheck", 10, 240)
+makeToggle(aimWCCard, Config.Aimbot.WallCheck, function(s) Config.Aimbot.WallCheck = s end)
+
+aimTargetCard = makeCard(miraPage, 246, 32)
+aimTargetCard.ClipsDescendants = false
+makeLabel(aimTargetCard, "Alvo", 10, 150)
+
+targetBtn = Instance.new("TextButton")
+targetBtn.Size = UDim2.new(0, 100, 0, 24)
+targetBtn.Position = UDim2.new(1, -110, 0.5, -12)
+targetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+targetBtn.Text = "🎯  " .. Config.Aimbot.Target .. "  ▼"
+targetBtn.TextColor3 = Color3.new(1, 1, 1)
+targetBtn.Font = Enum.Font.GothamBold
+targetBtn.TextSize = 11
+targetBtn.AutoButtonColor = false
+targetBtn.ZIndex = 200
+targetBtn.Parent = aimTargetCard
+Instance.new("UICorner", targetBtn).CornerRadius = UDim.new(0, 6)
+
+targetDropdown = Instance.new("Frame")
+targetDropdown.Size = UDim2.new(0, 100, 0, 60)
+targetDropdown.Position = UDim2.new(0, 0, 0, 0)
+targetDropdown.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+targetDropdown.BorderSizePixel = 0
+targetDropdown.Visible = false
+targetDropdown.ZIndex = 9999
+targetDropdown.Parent = gui
+Instance.new("UICorner", targetDropdown).CornerRadius = UDim.new(0, 6)
+
+local dropStroke = Instance.new("UIStroke", targetDropdown)
+dropStroke.Color = PURPLE_BORDER
+dropStroke.Thickness = 1
+dropStroke.Transparency = 0.3
+
+targetOptHead = Instance.new("TextButton")
+targetOptHead.Size = UDim2.new(1, 0, 0, 30)
+targetOptHead.Position = UDim2.new(0, 0, 0, 0)
+targetOptHead.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+targetOptHead.Text = "🎯  Head"
+targetOptHead.TextColor3 = TEXT
+targetOptHead.Font = Enum.Font.GothamMedium
+targetOptHead.TextSize = 11
+targetOptHead.AutoButtonColor = false
+targetOptHead.ZIndex = 9999
+targetOptHead.Parent = targetDropdown
+Instance.new("UICorner", targetOptHead).CornerRadius = UDim.new(0, 6)
+
+targetOptTorso = Instance.new("TextButton")
+targetOptTorso.Size = UDim2.new(1, 0, 0, 30)
+targetOptTorso.Position = UDim2.new(0, 0, 0, 30)
+targetOptTorso.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+targetOptTorso.Text = "🎯  Torso"
+targetOptTorso.TextColor3 = TEXT
+targetOptTorso.Font = Enum.Font.GothamMedium
+targetOptTorso.TextSize = 11
+targetOptTorso.AutoButtonColor = false
+targetOptTorso.ZIndex = 9999
+targetOptTorso.Parent = targetDropdown
+Instance.new("UICorner", targetOptTorso).CornerRadius = UDim.new(0, 6)
+
+function atualizarDropdown()
+    targetBtn.Text = "🎯  " .. Config.Aimbot.Target .. "  ▼"
+    if Config.Aimbot.Target == "Head" then
+        targetOptHead.BackgroundColor3 = ACCENT
+        targetOptTorso.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+    else
+        targetOptHead.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+        targetOptTorso.BackgroundColor3 = Color3.fromRGB(30, 130, 200)
+    end
+end
+
+atualizarDropdown()
+
+dropdownAbertoEm = 0
+
+targetBtn.MouseButton1Click:Connect(function()
+    targetDropdown.Visible = not targetDropdown.Visible
+    if targetDropdown.Visible then
+        dropdownAbertoEm = tick()
+        local btnPos = targetBtn.AbsolutePosition
+        local btnSize = targetBtn.AbsoluteSize
+        targetDropdown.Position = UDim2.new(0, btnPos.X, 0, btnPos.Y + btnSize.Y + 4)
+        targetDropdown.Size = UDim2.new(0, btnSize.X, 0, 60)
+    end
+end)
+
+targetOptHead.MouseButton1Click:Connect(function()
+    Config.Aimbot.Target = "Head"
+    atualizarDropdown()
+    targetDropdown.Visible = false
+    pcall(function() saveConfig() end)
+end)
+
+targetOptTorso.MouseButton1Click:Connect(function()
+    Config.Aimbot.Target = "Torso"
+    atualizarDropdown()
+    targetDropdown.Visible = false
+    pcall(function() saveConfig() end)
+end)
+
+UIS.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        if targetDropdown.Visible and tick() - dropdownAbertoEm > 0.3 then
+            local pos = input.Position
+            local dp = targetDropdown.AbsolutePosition
+            local ds = targetDropdown.AbsoluteSize
+            local bp = targetBtn.AbsolutePosition
+            local bs = targetBtn.AbsoluteSize
+            
+            local dentroDrop = pos.X >= dp.X and pos.X <= dp.X + ds.X 
+                          and pos.Y >= dp.Y and pos.Y <= dp.Y + ds.Y
+            local dentroBtn = pos.X >= bp.X and pos.X <= bp.X + bs.X 
+                          and pos.Y >= bp.Y and pos.Y <= bp.Y + bs.Y
+            
+            if not dentroDrop and not dentroBtn then
+                targetDropdown.Visible = false
+            end
+        end
+    end
+end)
+
+aimSmoothCard = makeCard(miraPage, 284, 32)
+makeLabel(aimSmoothCard, "Suavidade (0.05 - 1)", 10, 150)
+smoothInput = makeInput(aimSmoothCard, 6, tostring(Config.Aimbot.Smoothness), 60, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Aimbot.Smoothness = math.clamp(n, 0.05, 1) end
+end)
+smoothInput.Position = UDim2.new(1, -80, 0.5, -12)
+
+fovCard = makeCard(miraPage, 322, 32)
+makeLabel(fovCard, "FOV Circle", 10, 200)
+makeToggle(fovCard, Config.Aimbot.FOVEnabled, function(s) Config.Aimbot.FOVEnabled = s end)
+
+fovSizeCard = makeCard(miraPage, 360, 32)
+makeLabel(fovSizeCard, "Tamanho FOV", 10, 150)
+fovSizeInput = makeInput(fovSizeCard, 6, tostring(Config.Aimbot.FOVSize), 50, function(txt)
+    local n = tonumber(txt)
+    if n then Config.Aimbot.FOVSize = math.clamp(n, 20, 500) end
+end)
+fovSizeInput.Position = UDim2.new(1, -70, 0.5, -12)
+
+fovChangeCard = makeCard(miraPage, 398, 32)
+makeLabel(fovChangeCard, "FOV Changer", 10, 200)
+makeToggle(fovChangeCard, Config.FOVChanger.Enabled, function(s)
+    Config.FOVChanger.Enabled = s
+    setFOVChanger(s)
+end)
+
+-- ═══════════ PÁGINA ANTI ═══════════
+antiPage = createPage("Anti")
+addPageTitle(antiPage, "Anti", "Anti-Fling, Anti-AFK, Anti-Void")
+
+antiFlingToggle = nil
+
+afCard = makeCard(antiPage, 56, 32)
+makeLabel(afCard, "Anti-Fling", 10, 200)
+antiFlingToggle = makeToggle(afCard, Config.AntiFling.Enabled, function(s)
+    Config.AntiFling.Enabled = s
+    setAntiFling(s)
+end)
+
+afkCard = makeCard(antiPage, 94, 32)
+makeLabel(afkCard, "Anti-AFK", 10, 200)
+makeToggle(afkCard, Config.AntiAFK.Enabled, function(s)
+    Config.AntiAFK.Enabled = s
+    setAntiAFK(s)
+end)
+
+antiVoidCard = makeCard(antiPage, 132, 32)
+makeLabel(antiVoidCard, "Anti-Void (não cai no void)", 10, 240)
+makeToggle(antiVoidCard, Config.AntiVoid.Enabled, function(s)
+    Config.AntiVoid.Enabled = s
+    setAntiVoid(s)
+end)
+
+-- ═══════════ PÁGINA SERVIDOR ═══════════
+serverPage = createPage("Servidor")
+addPageTitle(serverPage, "Servidor", "Server Hop, Rejoin")
+
+rejoinCard = makeCard(serverPage, 56, 40)
+makeLabel(rejoinCard, "Rejoin (entrar de novo)", 10, 200)
+rejoinBtn = makeButton(rejoinCard, "Rejoin", 7, 80, 26, TOGGLE_ON_COLOR, function()
+    addNotif("Servidor", "Rejoinando... Script vai reabrir!")
+    rejoin()
+end)
+rejoinBtn.Position = UDim2.new(1, -90, 0.5, -13)
+
+hopCard = makeCard(serverPage, 102, 40)
+makeLabel(hopCard, "Server Hop", 10, 200)
+hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, TOGGLE_ON_COLOR, function()
+    addNotif("Servidor", "Procurando servidor... Script vai reabrir!")
+    serverHop()
+end)
+hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
+-- ═══════════ PÁGINA SOBRE ═══════════
+aboutPage = createPage("Sobre")
+addPageTitle(aboutPage, "Sobre", "Informações do script")
+
+aboutCard = Instance.new("Frame")
+aboutCard.Size = UDim2.new(1, -24, 0, 100)
+aboutCard.Position = UDim2.new(0, 12, 0, 56)
+aboutCard.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+aboutCard.BackgroundTransparency = 0.15
+aboutCard.BorderSizePixel = 0
+aboutCard.ZIndex = 120
+aboutCard.Parent = aboutPage
+Instance.new("UICorner", aboutCard).CornerRadius = UDim.new(0, 14)
+
+local aGrad = Instance.new("UIGradient", aboutCard)
+aGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 30, 50)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(10, 20, 35)),
+})
+aGrad.Rotation = 45
+
+local aStroke = Instance.new("UIStroke", aboutCard)
+aStroke.Color = PURPLE_BORDER
+aStroke.Thickness = 1
+aStroke.Transparency = 0.4
+
+local aLogo = Instance.new("ImageLabel")
+aLogo.Size = UDim2.new(0, 60, 0, 60)
+aLogo.Position = UDim2.new(0, 14, 0, 20)
+aLogo.BackgroundTransparency = 1
+aLogo.Image = ICONS.Star
+aLogo.ImageColor3 = PURPLE_BORDER
+aLogo.ZIndex = 130
+aLogo.Parent = aboutCard
+
+local aTitle = Instance.new("TextLabel")
+aTitle.Size = UDim2.new(1, -90, 0, 22)
+aTitle.Position = UDim2.new(0, 86, 0, 22)
+aTitle.BackgroundTransparency = 1
+aTitle.Text = "Slow Hub - Universal"
+aTitle.TextColor3 = Color3.new(1, 1, 1)
+aTitle.Font = Enum.Font.GothamBlack
+aTitle.TextSize = 18
+aTitle.TextXAlignment = Enum.TextXAlignment.Left
+aTitle.ZIndex = 130
+aTitle.Parent = aboutCard
+
+local aTitleGrad = Instance.new("UIGradient", aTitle)
+aTitleGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 100, 220)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 230, 255)),
+})
+aTitleGrad.Rotation = 0
+
+local aVersion = Instance.new("TextLabel")
+aVersion.Size = UDim2.new(1, -90, 0, 14)
+aVersion.Position = UDim2.new(0, 86, 0, 44)
+aVersion.BackgroundTransparency = 1
+aVersion.Text = "by Slow develop  •  discord.gg/DFaVxbxMmG"
+aVersion.TextColor3 = TEXTDIM
+aVersion.Font = Enum.Font.Gotham
+aVersion.TextSize = 10
+aVersion.TextXAlignment = Enum.TextXAlignment.Left
+aVersion.ZIndex = 130
+aVersion.Parent = aboutCard
+
+local aDesc = Instance.new("TextLabel")
+aDesc.Size = UDim2.new(1, -20, 0, 24)
+aDesc.Position = UDim2.new(0, 10, 0, 72)
+aDesc.BackgroundTransparency = 1
+aDesc.Text = "Script mobile com aimbot, ESP, fly, fling e muito mais."
+aDesc.TextColor3 = TEXTDIM
+aDesc.Font = Enum.Font.Gotham
+aDesc.TextSize = 9
+aDesc.TextXAlignment = Enum.TextXAlignment.Left
+aDesc.ZIndex = 130
+aDesc.Parent = aboutCard
+
+infoAboutCard = Instance.new("Frame")
+infoAboutCard.Size = UDim2.new(1, -24, 0, 80)
+infoAboutCard.Position = UDim2.new(0, 12, 0, 164)
+infoAboutCard.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+infoAboutCard.BackgroundTransparency = 0.2
+infoAboutCard.BorderSizePixel = 0
+infoAboutCard.ZIndex = 120
+infoAboutCard.Parent = aboutPage
+Instance.new("UICorner", infoAboutCard).CornerRadius = UDim.new(0, 10)
+local iStroke = Instance.new("UIStroke", infoAboutCard)
+iStroke.Color = PURPLE_BORDER
+iStroke.Thickness = 1
+iStroke.Transparency = 0.6
+
+local function makeInfoRow(parent, y, label, valor)
+    local row = Instance.new("TextLabel")
+    row.Size = UDim2.new(0, 100, 0, 16)
+    row.Position = UDim2.new(0, 10, 0, y)
+    row.BackgroundTransparency = 1
+    row.Text = label
+    row.TextColor3 = TEXTDIM
+    row.Font = Enum.Font.Gotham
+    row.TextSize = 10
+    row.TextXAlignment = Enum.TextXAlignment.Left
+    row.ZIndex = 130
+    row.Parent = parent
+
+    local rowVal = Instance.new("TextLabel")
+    rowVal.Size = UDim2.new(1, -120, 0, 16)
+    rowVal.Position = UDim2.new(0, 110, 0, y)
+    rowVal.BackgroundTransparency = 1
+    rowVal.Text = valor
+    rowVal.TextColor3 = TEXT
+    rowVal.Font = Enum.Font.GothamBold
+    rowVal.TextSize = 10
+    rowVal.TextXAlignment = Enum.TextXAlignment.Right
+    rowVal.ZIndex = 130
+    rowVal.Parent = parent
+end
+
+makeInfoRow(infoAboutCard, 8, "Criador", "Slow develop")
+makeInfoRow(infoAboutCard, 26, "Discord", "discord.gg/DFaVxbxMmG")
+makeInfoRow(infoAboutCard, 44, "Key System", "RedstoneGuard")
+makeInfoRow(infoAboutCard, 62, "GitHub", "slow-develp/slowhub")
+
+configCard = Instance.new("Frame")
+configCard.Size = UDim2.new(1, -24, 0, 90)
+configCard.Position = UDim2.new(0, 12, 0, 252)
+configCard.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+configCard.BackgroundTransparency = 0.2
+configCard.BorderSizePixel = 0
+configCard.ZIndex = 120
+configCard.Parent = aboutPage
+Instance.new("UICorner", configCard).CornerRadius = UDim.new(0, 10)
+local cStroke = Instance.new("UIStroke", configCard)
+cStroke.Color = PURPLE_BORDER
+cStroke.Thickness = 1
+cStroke.Transparency = 0.6
+
+local cTitle = Instance.new("TextLabel")
+cTitle.Size = UDim2.new(1, -20, 0, 14)
+cTitle.Position = UDim2.new(0, 10, 0, 8)
+cTitle.BackgroundTransparency = 1
+cTitle.Text = "Configurações"
+cTitle.TextColor3 = TEXT
+cTitle.Font = Enum.Font.GothamBold
+cTitle.TextSize = 11
+cTitle.TextXAlignment = Enum.TextXAlignment.Left
+cTitle.ZIndex = 130
+cTitle.Parent = configCard
+
+saveConfigBtn = makeIconButton(configCard, 11768914234, "Salvar Configurações", 30, 200, 24, Color3.fromRGB(0, 150, 80), function()
+    local g = parentGui:FindFirstChild("SlowHub")
+    if g then
+        for _, obj in ipairs(g:GetDescendants()) do
+            if obj:IsA("TextBox") and obj:IsFocused() then
+                obj:ReleaseFocus()
+                task.wait(0.05)
+            end
+        end
+    end
+    task.wait(0.1)
+    if saveConfig() then
+        addNotif("Config", "Configurações salvas com sucesso!", 3)
+    else
+        addNotif("Config", "Erro ao salvar (executor sem writefile)", 3)
+    end
+end)
+
+resetConfigBtn = makeIconButton(configCard, 84090157888894, "Resetar Configurações", 58, 200, 24, Color3.fromRGB(180, 40, 40), function()
+    resetConfig()
+    addNotif("Config", "Configurações resetadas! Reabra o script.", 4)
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- BOTÕES LATERAIS
+-- ═══════════════════════════════════════════════════════════
+createTabButton("Home", ICONS.Home)
+createTabButton("Jogadores", ICONS.Person)
+createTabButton("Movimento", ICONS.Lightning)
+createTabButton("Fling", ICONS.Fling)
+createTabButton("Teleporte", ICONS.Door)
+createTabButton("Visual", ICONS.Eye)
+createTabButton("Hitbox", ICONS.Box)
+createTabButton("Mira", ICONS.Aimbot)
+createTabButton("Anti", ICONS.Info)
+createTabButton("Servidor", ICONS.Star)
+createTabButton("Sobre", ICONS.Config)
+
+setPage("Home")
+
+-- ═══════════════════════════════════════════════════════════
+-- BOTÕES DO HEADER
+-- ═══════════════════════════════════════════════════════════
+minBtn.MouseButton1Click:Connect(function()
+    main.Visible = false
+    mainBorder.Visible = false
+    capsule.Visible = true
+    capsuleBorder.Visible = true
+end)
+
+isMaximized = false
+maxBtn.MouseButton1Click:Connect(function()
+    isMaximized = not isMaximized
+    if isMaximized then
+        main.Size = MAXIMIZED_SIZE
+        main.Position = UDim2.new(0.5, -maxW/2, 0.5, -maxH/2)
+    else
+        main.Size = NORMAL_SIZE
+        main.Position = UDim2.new(0.5, -250, 0.5, -170)
+    end
+end)
+
+capsuleText.MouseButton1Click:Connect(function()
+    if capsule.Visible then
+        capsule.Visible = false
+        capsuleBorder.Visible = false
+        main.Visible = true
+        mainBorder.Visible = true
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- DRAG DA CÁPSULA
+-- ═══════════════════════════════════════════════════════════
+capsuleDragging = false
+capsuleDragStart = nil
+capsuleStartPos = nil
+
+dragZone.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        capsuleDragging = true
+        capsuleDragStart = UIS:GetMouseLocation()
+        capsuleStartPos = capsule.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if not capsuleDragging then return end
+    if input.UserInputType ~= Enum.UserInputType.MouseMovement
+    and input.UserInputType ~= Enum.UserInputType.Touch then return end
+    local pos = UIS:GetMouseLocation()
+    local dx = pos.X - capsuleDragStart.X
+    local dy = pos.Y - capsuleDragStart.Y
+    capsule.Position = UDim2.new(
+        capsuleStartPos.X.Scale, capsuleStartPos.X.Offset + dx,
+        capsuleStartPos.Y.Scale, capsuleStartPos.Y.Offset + dy
+    )
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        capsuleDragging = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if not capsuleBorder then return end
+    capsuleBorder.Visible = capsule.Visible
+    capsuleBorder.Size = UDim2.new(
+        capsule.Size.X.Scale, capsule.Size.X.Offset + 4,
+        capsule.Size.Y.Scale, capsule.Size.Y.Offset + 4
+    )
+    capsuleBorder.Position = UDim2.new(
+        capsule.Position.X.Scale, capsule.Position.X.Offset - 2,
+        capsule.Position.Y.Scale, capsule.Position.Y.Offset - 2
+    )
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+    if not mainBorder then return end
+    mainBorder.Visible = main.Visible
+    mainBorder.Size = UDim2.new(
+        main.Size.X.Scale, main.Size.X.Offset + 4,
+        main.Size.Y.Scale, main.Size.Y.Offset + 4
+    )
+    mainBorder.Position = UDim2.new(
+        main.Position.X.Scale, main.Position.X.Offset - 2,
+        main.Position.Y.Scale, main.Position.Y.Offset - 2
+    )
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- DRAG DO PAINEL
+-- ═══════════════════════════════════════════════════════════
+mainDragging = false
+mainDragStart = nil
+mainStartPos = nil
+
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = true
+        mainDragStart = UIS:GetMouseLocation()
+        mainStartPos = main.Position
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        mainDragging = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if mainDragging and mainDragStart then
+        local delta = UIS:GetMouseLocation() - mainDragStart
+        main.Position = UDim2.new(
+            mainStartPos.X.Scale, mainStartPos.X.Offset + delta.X,
+            mainStartPos.Y.Scale, mainStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- MODAL DE FECHAR
+-- ═══════════════════════════════════════════════════════════
+closeModal = Instance.new("Frame")
+closeModal.Name = "CloseModal"
+closeModal.Size = UDim2.new(1, 0, 1, 0)
+closeModal.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+closeModal.BackgroundTransparency = 0.5
+closeModal.BorderSizePixel = 0
+closeModal.Visible = false
+closeModal.ZIndex = 300
+closeModal.Parent = gui
+
+modalBox = Instance.new("Frame")
+modalBox.Size = UDim2.new(0, 320, 0, 160)
+modalBox.Position = UDim2.new(0.5, -160, 0.5, -80)
+modalBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+modalBox.BorderSizePixel = 0
+modalBox.ZIndex = 301
+modalBox.Parent = closeModal
+Instance.new("UICorner", modalBox).CornerRadius = UDim.new(0, 16)
+
+modalStroke = Instance.new("UIStroke", modalBox)
+modalStroke.Color = PURPLE_BORDER
+modalStroke.Thickness = 1.5
+modalStroke.Transparency = 0.2
+
+modalTitle = Instance.new("TextLabel")
+modalTitle.Size = UDim2.new(1, -32, 0, 24)
+modalTitle.Position = UDim2.new(0, 16, 0, 20)
+modalTitle.BackgroundTransparency = 1
+modalTitle.Text = "Are you sure?"
+modalTitle.TextColor3 = TEXT
+modalTitle.Font = Enum.Font.GothamBold
+modalTitle.TextSize = 16
+modalTitle.TextXAlignment = Enum.TextXAlignment.Left
+modalTitle.ZIndex = 302
+modalTitle.Parent = modalBox
+
+modalDesc = Instance.new("TextLabel")
+modalDesc.Size = UDim2.new(1, -32, 0, 40)
+modalDesc.Position = UDim2.new(0, 16, 0, 48)
+modalDesc.BackgroundTransparency = 1
+modalDesc.Text = "This will close the script and disable all features."
+modalDesc.TextColor3 = TEXTDIM
+modalDesc.Font = Enum.Font.Gotham
+modalDesc.TextSize = 12
+modalDesc.TextXAlignment = Enum.TextXAlignment.Left
+modalDesc.TextWrapped = true
+modalDesc.ZIndex = 302
+modalDesc.Parent = modalBox
+
+cancelBtn = Instance.new("TextButton")
+cancelBtn.Size = UDim2.new(0, 130, 0, 32)
+cancelBtn.Position = UDim2.new(0, 16, 1, -48)
+cancelBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+cancelBtn.Text = "Cancel"
+cancelBtn.TextColor3 = TEXT
+cancelBtn.Font = Enum.Font.GothamBold
+cancelBtn.TextSize = 12
+cancelBtn.AutoButtonColor = false
+cancelBtn.ZIndex = 302
+cancelBtn.Parent = modalBox
+Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 8)
+
+confirmCloseBtn = Instance.new("TextButton")
+confirmCloseBtn.Size = UDim2.new(0, 130, 0, 32)
+confirmCloseBtn.Position = UDim2.new(1, -146, 1, -48)
+confirmCloseBtn.BackgroundColor3 = ACCENT
+confirmCloseBtn.Text = "Close Window"
+confirmCloseBtn.TextColor3 = Color3.new(1, 1, 1)
+confirmCloseBtn.Font = Enum.Font.GothamBold
+confirmCloseBtn.TextSize = 12
+confirmCloseBtn.AutoButtonColor = false
+confirmCloseBtn.ZIndex = 302
+confirmCloseBtn.Parent = modalBox
+Instance.new("UICorner", confirmCloseBtn).CornerRadius = UDim.new(0, 8)
+
+cancelBtn.MouseEnter:Connect(function()
+    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(60, 60, 70)}):Play()
+end)
+cancelBtn.MouseLeave:Connect(function()
+    TweenService:Create(cancelBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
+end)
+confirmCloseBtn.MouseEnter:Connect(function()
+    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(120, 200, 255)}):Play()
+end)
+confirmCloseBtn.MouseLeave:Connect(function()
+    TweenService:Create(confirmCloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = ACCENT}):Play()
+end)
+
+function openCloseModal()
+    closeModal.Visible = true
+    closeModal.BackgroundTransparency = 1
+    modalBox.Size = UDim2.new(0, 260, 0, 130)
+    modalBox.Position = UDim2.new(0.5, -130, 0.5, -65)
+    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 0.5}):Play()
+    TweenService:Create(modalBox, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 320, 0, 160),
+        Position = UDim2.new(0.5, -160, 0.5, -80)
+    }):Play()
+end
+
+function closeCloseModal()
+    TweenService:Create(closeModal, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(modalBox, TweenInfo.new(0.2), {
+        Size = UDim2.new(0, 260, 0, 130),
+        Position = UDim2.new(0.5, -130, 0.5, -65)
+    }):Play()
+    task.wait(0.22)
+    closeModal.Visible = false
+end
+
+cancelBtn.MouseButton1Click:Connect(closeCloseModal)
+
+function resetEverything()
+    for section, data in pairs(Config) do
+        if type(data) == "table" and data.Enabled ~= nil then
+            data.Enabled = false
+        end
+    end
+    if espData then
+        for _, d in pairs(espData) do
+            if d.Box then d.Box.Visible = false end
+            if d.Line then d.Line.Visible = false end
+            if d.Name then d.Name.Visible = false end
+            if d.Dist then d.Dist.Visible = false end
+            if d.HpBg then d.HpBg.Visible = false end
+            if d.Stick then
+                if d.Stick.Body then d.Stick.Body.Visible = false end
+                if d.Stick.ArmL then d.Stick.ArmL.Visible = false end
+                if d.Stick.ArmR then d.Stick.ArmR.Visible = false end
+                if d.Stick.LegL then d.Stick.LegL.Visible = false end
+                if d.Stick.LegR then d.Stick.LegR.Visible = false end
+            end
+        end
+    end
+    if hitboxConn then pcall(function() hitboxConn:Disconnect() end) hitboxConn = nil end
+    restaurarHitboxes()
+
+    if noclipConn then pcall(function() noclipConn:Disconnect() end) noclipConn = nil end
+    if speedConn then pcall(function() speedConn:Disconnect() end) speedConn = nil end
+    if flingConn then pcall(function() flingConn:Disconnect() end) flingConn = nil end
+    if flyConn then pcall(function() flyConn:Disconnect() end) flyConn = nil end
+    if flyBodyVel and flyBodyVel.Parent then flyBodyVel:Destroy() end
+    if flyBodyGyro and flyBodyGyro.Parent then flyBodyGyro:Destroy() end
+    flyBodyVel, flyBodyGyro = nil, nil
+
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = 16
+        hum.PlatformStand = false
+        hum.AutoRotate = true
+    end
+
+    if infJumpConn then pcall(function() infJumpConn:Disconnect() end) infJumpConn = nil end
+
+    if originalLighting and originalLighting.Ambient then
+        pcall(function()
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.ClockTime = originalLighting.ClockTime
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end)
+    end
+    pcall(function()
+        if Camera then Camera.FieldOfView = 70 end
+    end)
+    if antiFlingConn then pcall(function() antiFlingConn:Disconnect() end) antiFlingConn = nil end
+    if antiVoidConn then pcall(function() antiVoidConn:Disconnect() end) antiVoidConn = nil end
+    if antiAfkConn then pcall(function() antiAfkConn:Disconnect() end) antiAfkConn = nil end
+    if fovFrame then fovFrame.Visible = false end
+    aimbotActive = false
+end
+
+confirmCloseBtn.MouseButton1Click:Connect(function()
+    addNotif("Slow Hub", "Todas as funções foram desativadas.", 3)
+    resetEverything()
+    closeCloseModal()
+    capsule.Visible = false
+    capsuleBorder.Visible = false
+    main.Visible = false
+    mainBorder.Visible = false
+    task.wait(0.8)
+    pcall(function()
+        if gui then gui:Destroy() end
+        if keyGui then keyGui:Destroy() end
+    end)
+    pcall(function()
+        if espFolder and espFolder.Parent then espFolder:Destroy() end
+        if fovFrame and fovFrame.Parent then fovFrame:Destroy() end
+        if mainBorder and mainBorder.Parent then mainBorder:Destroy() end
+        if capsuleBorder and capsuleBorder.Parent then capsuleBorder:Destroy() end
+    end)
+    pcall(function()
+        if noclipConn then noclipConn:Disconnect() end
+        if speedConn then speedConn:Disconnect() end
+        if flingConn then flingConn:Disconnect() end
+        if flyConn then flyConn:Disconnect() end
+        if infJumpConn then infJumpConn:Disconnect() end
+        if antiFlingConn then antiFlingConn:Disconnect() end
+        if antiVoidConn then antiVoidConn:Disconnect() end
+        if antiAfkConn then antiAfkConn:Disconnect() end
+    end)
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    openCloseModal()
+end)
+
+-- ═══════════════════════════════════════════════════════════
+-- BOOT FINAL COM AUTO-VALIDAÇÃO
+-- ═══════════════════════════════════════════════════════════
+gui.Enabled = false
+keyGui.Enabled = true
+keyBackdrop.Visible = true
+keyBorder.Visible = true
+capsule.Visible = false
+capsuleBorder.Visible = false
+main.Visible = false
+mainBorder.Visible = false
+
+-- Aumenta ícones das abas Fling e Mira
+task.spawn(function()
+    task.wait(0.3)
+    if buttons and buttons["Fling"] then
+        local img = buttons["Fling"]:FindFirstChildOfClass("ImageLabel")
+        if img then
+            img.Size = UDim2.new(0, 22, 0, 22)
+            img.Position = UDim2.new(0, 6, 0.5, -11)
+        end
+        local lbl = buttons["Fling"]:FindFirstChild("TabLabel")
+        if lbl then
+            lbl.Position = UDim2.new(0, 30, 0, 0)
+        end
+    end
+    if buttons and buttons["Mira"] then
+        local img = buttons["Mira"]:FindFirstChildOfClass("ImageLabel")
+        if img then
+            img.Size = UDim2.new(0, 22, 0, 22)
+            img.Position = UDim2.new(0, 6, 0.5, -11)
+        end
+            local lbl = buttons["Fling"]:FindFirstChild("TabLabel")
+        if lbl then
+            lbl.Position = UDim2.new(0, 30, 0, 0)
+        end
+    end
+    if buttons and buttons["Mira"] then
+        local img = buttons["Mira"]:FindFirstChildOfClass("ImageLabel")
+        if img then
+            img.Size = UDim2.new(0, 22, 0, 22)
+            img.Position = UDim2.new(0, 6, 0.5, -11)
+        end
+        local lbl = buttons["Mira"]:FindFirstChild("TabLabel")
+        if lbl then
+            lbl.Position = UDim2.new(0, 30, 0, 0)
+        end
+    end
+end)
+
+-- AUTO-VALIDAÇÃO: verifica se tem key salva e válida
+task.spawn(function()
+    task.wait(1)
+    local savedKey = getSavedKey()
+
+    if not savedKey or savedKey == "" then
+        return
+    end
+
+    local ok, msg = verifyKeyWithRedstone(savedKey)
+    if ok then
+        -- Key válida → pula tela de key
+        keyInput.Text = savedKey
+        keyGui.Enabled = false
+        gui.Enabled = true
+        capsule.Visible = true
+        capsuleBorder.Visible = true
+        main.Visible = false
+        mainBorder.Visible = false
+
+        if not welcomeShown then
+            welcomeShown = true
+            task.wait(0.5)
+            addNotif("Welcome", "Bem-vindo de volta, " .. (LocalPlayer.DisplayName or LocalPlayer.Name) .. "!", 5)
+        end
+    else
+        -- Key expirada/inválida → mostra tela + aviso
+        task.wait(0.5)
+        if keyStatus and keyStatus.Parent then
+            keyStatus.TextColor3 = DANGER
+            keyStatus.Text = "Sua Key expirou. Pegue uma nova abaixo."
+        end
+    end
+end)
+
+-- AUTO-START DAS FUNÇÕES SALVAS (depois que o gui ficar ativo)
+task.spawn(function()
+    local tentativas = 0
+    while gui.Enabled == false and tentativas < 120 do
+        task.wait(1)
+        tentativas = tentativas + 1
+    end
+    if gui.Enabled == false then return end
+
+    task.wait(2)
+    print("[SlowHub] Verificando funcoes salvas...")
+    if Config.Aimbot.Enabled then
+        print("[SlowHub] Aimbot salvo como ON, ativando...")
+        startAimbot()
+    end
+    if Config.AntiFling.Enabled then pcall(setAntiFling, true) end
+    if Config.AntiVoid.Enabled then pcall(setAntiVoid, true) end
+    if Config.AntiAFK.Enabled then pcall(setAntiAFK, true) end
+    if Config.Fullbright.Enabled then pcall(setFullbright, true) end
+    if Config.FOVChanger.Enabled then pcall(setFOVChanger, true) end
+    if Config.Noclip.Enabled then pcall(setNoclip, true) end
+    if Config.Speed.Enabled then pcall(setSpeed, true) end
+    if Config.Fly.Enabled then pcall(setFly, true) end
+    if Config.InfiniteJump.Enabled then pcall(setInfJump, true) end
+    if Config.Hitbox.Enabled then pcall(setHitbox, true) end
+    print("[SlowHub] Funcoes salvas ativadas!")
+end)
+
+print("[SlowHub] Script carregado! Painel de Key aberto.")
