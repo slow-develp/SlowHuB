@@ -109,7 +109,12 @@ local ICON_PINCEL   = "rbxassetid://130521044774541"
 
 originalLighting = {}
 welcomeShown = false
-getgenv().SlowHubStartTime = tick()
+pcall(function()
+    if type(getgenv) == "function" then
+        getgenv().SlowHubStartTime = tick()
+    end
+end)
+_SlowHubStartTime = tick()
 
 Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(80,200,255), HighlightColor=Color3.fromRGB(60,220,255), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false, ShowLines=false},
@@ -292,7 +297,12 @@ function getPlayersCount()
 end
 
 function getUptime()
-    return math.floor(tick() - (getgenv().SlowHubStartTime or tick()))
+    local start = _SlowHubStartTime
+    if type(getgenv) == "function" then
+        local ok, val = pcall(function() return getgenv().SlowHubStartTime end)
+        if ok and val then start = val end
+    end
+    return math.floor(tick() - (start or tick()))
 end
 
 function openDiscord()
