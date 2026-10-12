@@ -1,3 +1,6 @@
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 1/8 (Setup + Config + Funções Base)
+-- ═══════════════════════════════════════════════════════════
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -48,9 +51,7 @@ local PURPLE_BORDER = Color3.fromRGB(40, 100, 220)
 TOGGLE_ON_COLOR = Color3.fromRGB(50, 200, 100)
 GOLD_COLOR = Color3.fromRGB(255, 215, 0)
 
--- ═══════════════════════════════════════════════════════════
--- 🔑 SLOWHUB — CONFIGURAÇÃO DO KEY SYSTEM (RedstoneGuard)
--- ═══════════════════════════════════════════════════════════
+-- 🔑 KEY SYSTEM CONFIG
 KEY_CONFIG = {
     Logo = "rbxassetid://71605643769617",
     Title = "Slow Hub",
@@ -83,7 +84,6 @@ KEY_CONFIG = {
     },
 }
 
--- Compatibilidade com o código antigo
 KEY = "SlowHubVIP"
 DISCORD_LINK = KEY_CONFIG.DiscordInvite
 SCRIPT_URL = "https://raw.githubusercontent.com/slow-develp/slowhub/main/slowhub.lua"
@@ -109,12 +109,13 @@ local ICON_PINCEL   = "rbxassetid://130521044774541"
 
 originalLighting = {}
 welcomeShown = false
+_SlowHubStartTime = tick()
+
 pcall(function()
     if type(getgenv) == "function" then
         getgenv().SlowHubStartTime = tick()
     end
 end)
-_SlowHubStartTime = tick()
 
 Config = {
     ESP = {Enabled=false, Color=Color3.fromRGB(80,200,255), HighlightColor=Color3.fromRGB(60,220,255), ShowName=false, ShowDistance=false, ShowHealth=false, ShowHighlight=false, TeamCheck=false, ShowLines=false},
@@ -176,7 +177,7 @@ function resetConfig()
     end
 end
 
--- 🔑 FUNÇÕES DO SISTEMA DE KEY (permanente vs temporária)
+-- 🔑 FUNÇÕES DO SISTEMA DE KEY
 function isPermanent()
     if type(isfile) == "function" and isfile(KEY_CONFIG.PermFile) then
         return true
@@ -298,10 +299,12 @@ end
 
 function getUptime()
     local start = _SlowHubStartTime
-    if type(getgenv) == "function" then
-        local ok, val = pcall(function() return getgenv().SlowHubStartTime end)
-        if ok and val then start = val end
-    end
+    pcall(function()
+        if type(getgenv) == "function" then
+            local val = getgenv().SlowHubStartTime
+            if val then start = val end
+        end
+    end)
     return math.floor(tick() - (start or tick()))
 end
 
@@ -316,7 +319,10 @@ function openDiscord()
 end
 
 loadConfig()
-                                     
+
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 2/8 (ESP + FOV + getClosest)
+-- ═══════════════════════════════════════════════════════════
 espFolder = Instance.new("Folder")
 espFolder.Name = "SlowHub_ESP"
 espFolder.Parent = parentGui
@@ -331,6 +337,7 @@ function destroyESP(plr)
     end
     espData[plr] = nil
 end
+
 function createESP(plr)
     if espData[plr] then return end
     local d = {}
@@ -754,7 +761,7 @@ function getClosest()
                 if Config.Aimbot.Target == "Head" then
                     part = char:FindFirstChild("Head")
                 end
-                           if not part then part = hrp end
+                if not part then part = hrp end
 
                 if part and part.Parent then
                     local pos, onScreen = Camera:WorldToViewportPoint(part.Position)
@@ -776,6 +783,10 @@ function getClosest()
     end
     return closestPart
 end
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 3/8 (AutoShot + Aimbot + Auto Reload + Hitbox)
+-- ═══════════════════════════════════════════════════════════
+
 -- ═══════════ AUTOSHOT SIMPLES (Fluxo PvP) ═══════════
 aimbotActive = false
 _ultimoTiro = 0
@@ -832,7 +843,7 @@ function atirarFluxo()
         end
     end
     return true
-end               
+end
 
 -- ═══════════ MUNIÇÃO / AUTO RELOAD ═══════════
 function getMunicao()
@@ -952,7 +963,6 @@ function startAimbot()
         aimbotActive = false
     end)
 end
-
 
 -- ═══════════ HITBOX UNIVERSAL ═══════════
 hitboxConn = nil
@@ -1097,7 +1107,10 @@ end
 Players.PlayerAdded:Connect(trackPlayer)
 Players.PlayerRemoving:Connect(function(plr)
     destroyESP(plr)
-end)                                                               
+end)
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 4/8 (Movimento)
+-- ═══════════════════════════════════════════════════════════
 
 -- NOCLIP
 noclipConn = nil
@@ -1273,6 +1286,47 @@ function setInfJump(state)
     end)
 end
 
+-- FULLBRIGHT
+function setFullbright(state)
+    if state then
+        if not originalLighting.Ambient then
+            originalLighting.Ambient = Lighting.Ambient
+            originalLighting.OutdoorAmbient = Lighting.OutdoorAmbient
+            originalLighting.Brightness = Lighting.Brightness
+            originalLighting.ClockTime = Lighting.ClockTime
+            originalLighting.FogEnd = Lighting.FogEnd
+            originalLighting.GlobalShadows = Lighting.GlobalShadows
+        end
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 3
+        Lighting.ClockTime = 14
+        Lighting.FogEnd = 1e6
+        Lighting.GlobalShadows = false
+    else
+        if originalLighting.Ambient then
+            Lighting.Ambient = originalLighting.Ambient
+            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
+            Lighting.Brightness = originalLighting.Brightness
+            Lighting.ClockTime = originalLighting.ClockTime
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.GlobalShadows = originalLighting.GlobalShadows
+        end
+    end
+end
+
+-- FOV CHANGER
+function setFOVChanger(state)
+    if state then
+        Camera.FieldOfView = Config.FOVChanger.Value
+    else
+        Camera.FieldOfView = 70
+    end
+end
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 5/8 (Fling + Anti + TP + Rejoin)
+-- ═══════════════════════════════════════════════════════════
+
 -- FLING
 flingActive = false
 flingActiveStatus = nil
@@ -1373,7 +1427,7 @@ end
 antiFlingConn = nil
 function setAntiFling(state)
     if antiFlingConn then antiFlingConn:Disconnect() antiFlingConn = nil end
-        if not state then return end
+    if not state then return end
     antiFlingConn = RunService.Heartbeat:Connect(function()
         local char = LocalPlayer.Character
         if not char then return end
@@ -1456,44 +1510,6 @@ function setAntiAFK(state)
                 end
             end)
         end)
-    end
-end
-
--- FULLBRIGHT
-function setFullbright(state)
-    if state then
-        if not originalLighting.Ambient then
-            originalLighting.Ambient = Lighting.Ambient
-            originalLighting.OutdoorAmbient = Lighting.OutdoorAmbient
-            originalLighting.Brightness = Lighting.Brightness
-            originalLighting.ClockTime = Lighting.ClockTime
-            originalLighting.FogEnd = Lighting.FogEnd
-            originalLighting.GlobalShadows = Lighting.GlobalShadows
-        end
-        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-        Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-        Lighting.Brightness = 3
-        Lighting.ClockTime = 14
-        Lighting.FogEnd = 1e6
-        Lighting.GlobalShadows = false
-    else
-        if originalLighting.Ambient then
-            Lighting.Ambient = originalLighting.Ambient
-            Lighting.OutdoorAmbient = originalLighting.OutdoorAmbient
-            Lighting.Brightness = originalLighting.Brightness
-            Lighting.ClockTime = originalLighting.ClockTime
-            Lighting.FogEnd = originalLighting.FogEnd
-            Lighting.GlobalShadows = originalLighting.GlobalShadows
-        end
-    end
-end
-
--- FOV CHANGER
-function setFOVChanger(state)
-    if state then
-        Camera.FieldOfView = Config.FOVChanger.Value
-    else
-        Camera.FieldOfView = 70
     end
 end
 
@@ -1585,7 +1601,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 -- ═══════════════════════════════════════════════════════════
--- GUI PRINCIPAL (SlowHub)
+-- SLOWHUB — PARTE 6/8 (Cápsula + Key GUI + Helpers)
 -- ═══════════════════════════════════════════════════════════
 gui = Instance.new("ScreenGui")
 gui.Name = "SlowHub"
@@ -1696,7 +1712,7 @@ capsuleTextGradient.Color = ColorSequence.new({
 capsuleTextGradient.Rotation = 0
 
 -- ═══════════════════════════════════════════════════════════
--- 🔑 KEY GUI (Estilo Axon Hub + RedstoneGuard + Auto-Validação)
+-- 🔑 KEY GUI (Axon Hub Style + RedstoneGuard)
 -- ═══════════════════════════════════════════════════════════
 keyGui = Instance.new("ScreenGui")
 keyGui.Name = "SlowHubKey"
@@ -1740,7 +1756,6 @@ keyFrame.ZIndex = 10000
 keyFrame.Parent = keyBorder
 Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0, 15)
 
--- HEADER
 keyHeader = Instance.new("Frame")
 keyHeader.Size = UDim2.new(1, 0, 0, 90)
 keyHeader.BackgroundTransparency = 1
@@ -2052,9 +2067,7 @@ keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 keyStatus.ZIndex = 10002
 keyStatus.Parent = keyBody
 
--- ═══════════════════════════════════════════════════════════
--- VERIFICAÇÃO DE KEY (RedstoneGuard)
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ VERIFICAÇÃO DE KEY (RedstoneGuard) ═══════════
 function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
 
@@ -2131,7 +2144,6 @@ keyInput.FocusLost:Connect(function(enter)
     if enter then tryValidateKey() end
 end)
 
--- Pré-preenche a key salva no input
 task.spawn(function()
     local saved = getSavedKey()
     if saved and saved ~= "" then
@@ -2139,7 +2151,7 @@ task.spawn(function()
     end
 end)
 
--- Drag do Key GUI
+-- Drag da Key GUI
 keyDragging = false
 keyDragStart = nil
 keyStartPos = nil
@@ -2173,8 +2185,8 @@ UIS.InputEnded:Connect(function(input)
     end
 end)
 
-════════════════════════════════════════════════
--- FUNÇÕES AUXILIARES
+-- ═══════════════════════════════════════════════════════════
+-- FUNÇÕES AUXILIARES (makeCard, makeToggle, makeInput...)
 -- ═══════════════════════════════════════════════════════════
 function makeCard(parent, y, h)
     local card = Instance.new("Frame")
@@ -2517,9 +2529,7 @@ function addNotif(title, desc, duration)
     task.delay(duration, dismiss)
 end
 
--- ═══════════════════════════════════════════════════════════
--- PAINEL PRINCIPAL
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ PAINEL PRINCIPAL BASE ═══════════
 main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = NORMAL_SIZE
@@ -2607,7 +2617,7 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 -- ═══════════════════════════════════════════════════════════
--- HEADER DO PAINEL PRINCIPAL
+-- SLOWHUB — PARTE 7/8 (Header + Footer + Sidebar + Páginas)
 -- ═══════════════════════════════════════════════════════════
 HEADER_H = 52
 SIDEBAR_W = 140
@@ -2778,9 +2788,6 @@ closeBtn.MouseLeave:Connect(function()
     TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
 end)
 
--- ═══════════════════════════════════════════════════════════
--- FOOTER
--- ═══════════════════════════════════════════════════════════
 footer = Instance.new("Frame")
 footer.Size = UDim2.new(1, 0, 0, FOOTER_H)
 footer.Position = UDim2.new(0, 0, 1, -FOOTER_H)
@@ -2833,9 +2840,6 @@ footerUser.TextXAlignment = Enum.TextXAlignment.Left
 footerUser.ZIndex = 51
 footerUser.Parent = footer
 
--- ═══════════════════════════════════════════════════════════
--- SIDEBAR + CONTENT
--- ═══════════════════════════════════════════════════════════
 sidebarHolder = Instance.new("Frame")
 sidebarHolder.Size = UDim2.new(0, SIDEBAR_W, 1, -(HEADER_H + FOOTER_H + 24))
 sidebarHolder.Position = UDim2.new(0, 0, 0, HEADER_H)
@@ -2977,6 +2981,7 @@ function addPageTitle(page, text, subtext)
         sub.Parent = page
     end
 end
+
 -- ═══════════ PÁGINA HOME ═══════════
 homePage = createPage("Home")
 addPageTitle(homePage, "Home", "Bem-vindo ao Slow Hub")
@@ -3040,11 +3045,10 @@ profUser.TextXAlignment = Enum.TextXAlignment.Left
 profUser.ZIndex = 130
 profUser.Parent = profileCard
 
--- 🔑 BADGE (Permanente ou Free User)
 profBadge = Instance.new("TextLabel")
 profBadge.Size = UDim2.new(0, 110, 0, 20)
 profBadge.Position = UDim2.new(1, -122, 0, 18)
-profBadge.BackgroundColor3 = TOGGLE_ON_COLOR
+profBadge.BackgroundColor3 = ACCENT
 profBadge.BackgroundTransparency = 0.15
 profBadge.Text = "FREE USER"
 profBadge.TextColor3 = Color3.new(1, 1, 1)
@@ -3066,7 +3070,6 @@ profStatus.TextXAlignment = Enum.TextXAlignment.Right
 profStatus.ZIndex = 130
 profStatus.Parent = profileCard
 
--- 🔑 Atualiza o badge conforme o tipo de key
 task.spawn(function()
     task.wait(0.3)
     if profBadge and profBadge.Parent then
@@ -3236,6 +3239,7 @@ task.spawn(function()
         end
     end
 end)
+
 -- ═══════════ PÁGINA JOGADORES ═══════════
 playersPage = createPage("Jogadores")
 addPageTitle(playersPage, "Jogadores", "Lista de jogadores no servidor")
@@ -3410,6 +3414,7 @@ Players.PlayerRemoving:Connect(function(plr)
     if data and data.frame then data.frame:Destroy() end
     playerCards[plr.UserId] = nil
 end)
+
 -- ═══════════ PÁGINA MOVIMENTO ═══════════
 movementPage = createPage("Movimento")
 addPageTitle(movementPage, "Movimento", "Noclip, Speed, Fly, Inf Jump")
@@ -3756,7 +3761,7 @@ flingStartBtn.MouseButton1Click:Connect(function()
                     antiFlingToggle.Text = "ON"
                 end
                 updateFlingStatus()
-                addNotif("Fling", "Todos flingados. Anti-Fling reativado.", 3)
+                            addNotif("Fling", "Todos flingados. Anti-Fling reativado.", 3)
                 break
             end
 
@@ -3819,6 +3824,7 @@ Players.PlayerRemoving:Connect(function(plr)
     flingSelectedTargets[plr.UserId] = nil
     updateFlingStatus()
 end)
+
 -- ═══════════ PÁGINA TELEPORTE ═══════════
 tpPage = createPage("Teleporte")
 addPageTitle(tpPage, "Teleporte", "Salvar / Ir / Resetar / Remover")
@@ -3979,6 +3985,7 @@ end)
 makeColorPalette(visualPage, 480, "🎯 Cor do FOV", Config.Aimbot.FOVColor, function(cor)
     Config.Aimbot.FOVColor = cor
 end)
+
 -- ═══════════ PÁGINA HITBOX ═══════════
 hitboxPage = createPage("Hitbox")
 addPageTitle(hitboxPage, "Hitbox", "Quadrado invisível no HRP")
@@ -4218,6 +4225,7 @@ hopBtn = makeButton(hopCard, "Hop", 7, 80, 26, TOGGLE_ON_COLOR, function()
     serverHop()
 end)
 hopBtn.Position = UDim2.new(1, -90, 0.5, -13)
+
 -- ═══════════ PÁGINA SOBRE ═══════════
 aboutPage = createPage("Sobre")
 addPageTitle(aboutPage, "Sobre", "Informações do script")
@@ -4390,9 +4398,7 @@ resetConfigBtn = makeIconButton(configCard, 84090157888894, "Resetar Configuraç
     addNotif("Config", "Configurações resetadas! Reabra o script.", 4)
 end)
 
--- ═══════════════════════════════════════════════════════════
--- BOTÕES LATERAIS
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ BOTÕES LATERAIS ═══════════
 createTabButton("Home", ICONS.Home)
 createTabButton("Jogadores", ICONS.Person)
 createTabButton("Movimento", ICONS.Lightning)
@@ -4406,10 +4412,12 @@ createTabButton("Servidor", ICONS.Star)
 createTabButton("Sobre", ICONS.Config)
 
 setPage("Home")
+      
+-- ═══════════════════════════════════════════════════════════
+-- SLOWHUB — PARTE 8/8 (Drags + Modal + Boot Final)
+-- ═══════════════════════════════════════════════════════════
 
--- ═══════════════════════════════════════════════════════════
--- BOTÕES DO HEADER
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ BOTÕES DO HEADER ═══════════
 minBtn.MouseButton1Click:Connect(function()
     main.Visible = false
     mainBorder.Visible = false
@@ -4438,9 +4446,7 @@ capsuleText.MouseButton1Click:Connect(function()
     end
 end)
 
--- ═══════════════════════════════════════════════════════════
--- DRAG DA CÁPSULA
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ DRAG DA CÁPSULA ═══════════
 capsuleDragging = false
 capsuleDragStart = nil
 capsuleStartPos = nil
@@ -4500,9 +4506,7 @@ RunService.RenderStepped:Connect(function(dt)
     )
 end)
 
--- ═══════════════════════════════════════════════════════════
--- DRAG DO PAINEL
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ DRAG DO PAINEL ═══════════
 mainDragging = false
 mainDragStart = nil
 mainStartPos = nil
@@ -4533,9 +4537,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ═══════════════════════════════════════════════════════════
--- MODAL DE FECHAR
--- ═══════════════════════════════════════════════════════════
+-- ═══════════ MODAL DE FECHAR ═══════════
 closeModal = Instance.new("Frame")
 closeModal.Name = "CloseModal"
 closeModal.Size = UDim2.new(1, 0, 1, 0)
@@ -4747,7 +4749,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ═══════════════════════════════════════════════════════════
--- BOOT FINAL COM AUTO-VALIDAÇÃO
+-- BOOT FINAL
 -- ═══════════════════════════════════════════════════════════
 gui.Enabled = false
 keyGui.Enabled = true
@@ -4778,17 +4780,6 @@ task.spawn(function()
             img.Size = UDim2.new(0, 22, 0, 22)
             img.Position = UDim2.new(0, 6, 0.5, -11)
         end
-            local lbl = buttons["Fling"]:FindFirstChild("TabLabel")
-        if lbl then
-            lbl.Position = UDim2.new(0, 30, 0, 0)
-        end
-    end
-    if buttons and buttons["Mira"] then
-        local img = buttons["Mira"]:FindFirstChildOfClass("ImageLabel")
-        if img then
-            img.Size = UDim2.new(0, 22, 0, 22)
-            img.Position = UDim2.new(0, 6, 0.5, -11)
-        end
         local lbl = buttons["Mira"]:FindFirstChild("TabLabel")
         if lbl then
             lbl.Position = UDim2.new(0, 30, 0, 0)
@@ -4796,7 +4787,7 @@ task.spawn(function()
     end
 end)
 
--- AUTO-VALIDAÇÃO: verifica se tem key salva e válida
+-- AUTO-VALIDAÇÃO
 task.spawn(function()
     task.wait(1)
     local savedKey = getSavedKey()
@@ -4807,7 +4798,6 @@ task.spawn(function()
 
     local ok, msg = verifyKeyWithRedstone(savedKey)
     if ok then
-        -- Key válida → pula tela de key
         keyInput.Text = savedKey
         keyGui.Enabled = false
         gui.Enabled = true
@@ -4822,7 +4812,6 @@ task.spawn(function()
             addNotif("Welcome", "Bem-vindo de volta, " .. (LocalPlayer.DisplayName or LocalPlayer.Name) .. "!", 5)
         end
     else
-        -- Key expirada/inválida → mostra tela + aviso
         task.wait(0.5)
         if keyStatus and keyStatus.Parent then
             keyStatus.TextColor3 = DANGER
@@ -4831,7 +4820,7 @@ task.spawn(function()
     end
 end)
 
--- AUTO-START DAS FUNÇÕES SALVAS (depois que o gui ficar ativo)
+-- AUTO-START DAS FUNÇÕES SALVAS
 task.spawn(function()
     local tentativas = 0
     while gui.Enabled == false and tentativas < 120 do
@@ -4841,9 +4830,7 @@ task.spawn(function()
     if gui.Enabled == false then return end
 
     task.wait(2)
-    print("[SlowHub] Verificando funcoes salvas...")
     if Config.Aimbot.Enabled then
-        print("[SlowHub] Aimbot salvo como ON, ativando...")
         startAimbot()
     end
     if Config.AntiFling.Enabled then pcall(setAntiFling, true) end
@@ -4856,7 +4843,4 @@ task.spawn(function()
     if Config.Fly.Enabled then pcall(setFly, true) end
     if Config.InfiniteJump.Enabled then pcall(setInfJump, true) end
     if Config.Hitbox.Enabled then pcall(setHitbox, true) end
-    print("[SlowHub] Funcoes salvas ativadas!")
 end)
-
-print("[SlowHub] Script carregado! Painel de Key aberto.")
