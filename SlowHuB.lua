@@ -2215,11 +2215,10 @@ function verifyKeyWithRedstone(key)
     -- 👑 KEY PERMANENTE
     if key == "SlowHubVIP" then
         setPermanent()
-        saveExpiresAt("")
         return true, "Key Permanente"
     end
 
-    -- 🔑 Valida pelo SDK
+    -- 🔑 Key temporária (valida no SDK)
     local sdk = initRedstoneSDK()
     if sdk then
         local ok, result = pcall(function()
@@ -2227,8 +2226,6 @@ function verifyKeyWithRedstone(key)
         end)
 
         if ok and result and result.valid == true then
-            -- 💾 SEMPRE salva 24h a partir de agora (padrão RedstoneGuard)
-            saveExpiresAt(os.time() + 86400)
             return true, "Key válida"
         else
             local motivo = "Key inválida"
@@ -2240,7 +2237,7 @@ function verifyKeyWithRedstone(key)
     end
 
     return false, "Erro na verificação"
-    end
+    end 
     
 function tryValidateKey()
     local typed = keyInput.Text or ""
@@ -3222,18 +3219,17 @@ profStatus.TextXAlignment = Enum.TextXAlignment.Right
 profStatus.ZIndex = 130
 profStatus.Parent = profileCard
 
--- 🔑 Atualiza o badge + tempo restante (a cada 1 segundo)
+-- 🔑 Atualiza o badge + tempo restante
 task.spawn(function()
     task.wait(0.3)
     if profBadge and profBadge.Parent then
-        if isPermanent() then
-            profBadge.Text = "👑 PERMANENTE"
-            profBadge.BackgroundColor3 = GOLD_COLOR
-            profBadge.TextColor3 = Color3.fromRGB(30, 20, 0)
-            if profStatus and profStatus.Parent then
-                profStatus.Text = "♾️ Sem expiração"
-                profStatus.TextColor3 = GOLD_COLOR
-            end
+        ...
+    end
+
+    while task.wait(1) do
+        ...
+    end
+end)
         else
     profBadge.Text = "FREE USER"
     profBadge.BackgroundColor3 = ACCENT
