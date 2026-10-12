@@ -2265,8 +2265,6 @@ function tryValidateKey()
         setPermanent()
                 end
 
-            saveKeyLocal(typed)
-
             task.wait(0.6)
             keyGui.Enabled = false
             gui.Enabled = true
