@@ -2143,59 +2143,79 @@ keyStatus.ZIndex = 10002
 keyStatus.Parent = keyBody
 
 -- ═══════════ VERIFICAÇÃO ═══════════
-function verifyKeyWithRedstone(key)
+
 function verifyKeyWithRedstone(key)
     if not key or key == "" then return false, "Digite uma Key" end
 
-    -- 🔑 Usa o SDK oficial do RedstoneGuard
-    local sdk = nil
-    pcall(function()
-        sdk = loadstring(game:HttpGet("https://redstoneguard.xyz/redstoneguard-sdk.lua"))()
-    end)
-
-    if sdk then
-        -- Tenta várias formas (dependendo de como o SDK expõe)
-        local ok, result = pcall(function()
-            if sdk.verify then
-                return sdk.verify(key)
-            elseif sdk.verifyKey then
-                return sdk.verifyKey(key)
-            elseif sdk.checkKey then
-                return sdk.checkKey(key)
-            elseif sdk.validateKey then
-                return sdk.validateKey(key)
-            end
-            return nil
-        end)
-
-        if ok and result then
-            -- Se retornou true direto
-            if result == true then
-                return true, "Key válida"
-            end
-            -- Se retornou tabela com valid
-            if type(result) == "table" then
-                if result.valid == true or result.success == true then
-                    if result.permanent == true or result.type == "permanent" then
-                        setPermanent()
-                    end
-                    return true, "Key válida"
-                end
-                if result.message then
-                    return false, tostring(result.message)
-                end
-            end
-        end
-    end
-
-    -- Fallback VIP (só aceita a key "SlowHubVIP")
+    -- 🔑 VIP fixa sempre funciona
     if key == KEY then
         setPermanent()
         return true, "Key VIP válida"
     end
 
-    return false, "Key inválida"
+    local resposta = nil
+
+    -- Tentativa 1: request() com POST (Delta suporta)
+    pcall(function()
+        local func = nil
+        if type(request) == "function" then func = request
+        elseif type(http_request) == "function" then func = http_request
+        elseif type(syn) == "table" and syn.request then func = syn.request
+        elseif type(http) == "table" and http.request then func = http.request
+        end
+
+        if func then
+            local r = func({
+                Url = "https://redstoneguard.xyz/api/keys/verify",
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json",
+                    ["x-api-key"] = KEY_CONFIG.ApiKey
+                },
+                Body = HttpService:JSONEncode({
+                    scriptID = KEY_CONFIG.ScriptID,
+                    key = tostring(key)
+                })
+            })
+            if r and r.Body then resposta = r.Body end
+        end
+    end)
+
+    -- Tentativa 2: GET simples com query params
+    if not resposta then
+        pcall(function()
+            resposta = game:HttpGet(
+                "https://redstoneguard.xyz/api/keys/verify"
+                .. "?key=" .. tostring(key)
+                .. "&scriptID=" .. tostring(KEY_CONFIG.ScriptID)
+                .. "&apiKey=" .. tostring(KEY_CONFIG.ApiKey)
+            )
+        end)
     end
+
+    -- Analisa resposta
+    if resposta and type(resposta) == "string" and resposta ~= "" then
+        local ok, data = pcall(function()
+            return HttpService:JSONDecode(resposta)
+        end)
+        if ok and type(data) == "table" then
+            if data.valid == true or data.success == true then
+                if data.permanent == true or data.type == "permanent" then
+                    setPermanent()
+                end
+                return true, "Key válida"
+            end
+            if data.message then
+                return false, tostring(data.message)
+            end
+            if data.error then
+                return false, tostring(data.error)
+            end
+        end
+    end
+
+    return false, "Key inválida ou não encontrada"
+end
     
 function tryValidateKey()
     local typed = keyInput.Text or ""
