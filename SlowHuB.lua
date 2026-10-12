@@ -207,16 +207,22 @@ function saveExpiresAt(timestamp)
 end
 
 function getExpiresAt()
+function getExpiresAt()
     if type(isfile) == "function" and type(readfile) == "function" then
         local ok = pcall(function() return isfile("slowhub_expires.txt") end)
         if ok and isfile("slowhub_expires.txt") then
             local val = readfile("slowhub_expires.txt")
-            return tonumber(val) or val
+            if val and val ~= "" then
+                local num = tonumber(val)
+                if num then return num end
+            end
         end
     end
-    return nil
-end
 
+    -- ⚠️ FALLBACK: se não achou, assume 24h a partir da última key salva
+    return nil
+    end
+    
 function formatTempoRestante(expiresAt)
     if not expiresAt then return "✅ Ativa" end
     local exp = tonumber(expiresAt)
@@ -2206,41 +2212,35 @@ function verifyKeyWithRedstone(key)
         return false, "Digite uma Key"
     end
 
-    local sdk = initRedstoneSDK()
+    -- 👑 KEY PERMANENTE
+    if key == "SlowHubVIP" then
+        setPermanent()
+        saveExpiresAt("")
+        return true, "Key Permanente"
+    end
 
+    -- 🔑 Valida pelo SDK
+    local sdk = initRedstoneSDK()
     if sdk then
         local ok, result = pcall(function()
             return sdk.verifyKey(key)
         end)
 
-        if ok and result then
-    if result.valid == true then
-        -- Salva a expiração
-        if result.expires_at then
-            saveExpiresAt(result.expires_at)
-        end
-
-        -- Se nunca expira, marca como PERMANENTE
-        if result.expires_at == nil 
-        or result.expires_at == "never" 
-        or result.expires_at == 0 then
-            setPermanent()
-        end
-        return true, "Key válida"
-            else
-                return false, tostring(result.reason or "Key inválida")
+        if ok and result and result.valid == true then
+            -- 💾 SEMPRE salva 24h a partir de agora (padrão RedstoneGuard)
+            saveExpiresAt(os.time() + 86400)
+            return true, "Key válida"
+        else
+            local motivo = "Key inválida"
+            if ok and result and result.reason then
+                motivo = tostring(result.reason)
             end
+            return false, motivo
         end
-    end
-
-    -- Fallback VIP (só aceita SlowHubVIP)
-    if key == KEY then
-        setPermanent()
-        return true, "Key VIP válida"
     end
 
     return false, "Erro na verificação"
-end
+    end
     
 function tryValidateKey()
     local typed = keyInput.Text or ""
@@ -3235,16 +3235,22 @@ task.spawn(function()
                 profStatus.TextColor3 = GOLD_COLOR
             end
         else
-            profBadge.Text = "FREE USER"
-            profBadge.BackgroundColor3 = ACCENT
-            profBadge.TextColor3 = Color3.new(1, 1, 1)
-            if profStatus and profStatus.Parent then
-                profStatus.Text = formatTempoRestante(getExpiresAt())
-                profStatus.TextColor3 = SUCCESS
-            end
-        end
+    profBadge.Text = "FREE USER"
+    profBadge.BackgroundColor3 = ACCENT
+    profBadge.TextColor3 = Color3.new(1, 1, 1)
+
+    -- Se não tem expiração salva, cria uma com 24h a partir de agora
+    local exp = getExpiresAt()
+    if not exp then
+        saveExpiresAt(os.time() + 86400)
+        exp = getExpiresAt()
     end
 
+    if profStatus and profStatus.Parent then
+        profStatus.Text = formatTempoRestante(exp)
+        profStatus.TextColor3 = SUCCESS
+    end
+                end
     -- Loop que atualiza o tempo A CADA SEGUNDO
     while task.wait(1) do
         if profStatus and profStatus.Parent and not isPermanent() then
