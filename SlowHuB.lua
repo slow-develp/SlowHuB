@@ -3254,18 +3254,15 @@ task.spawn(function()
             profBadge.BackgroundColor3 = ACCENT
             profBadge.TextColor3 = Color3.new(1, 1, 1)
             if profStatus and profStatus.Parent then
-                local exp = getExpiresAt()
-                profStatus.Text = formatTempoRestante(exp)
+                profStatus.Text = formatTempoRestante(getExpiresAt())
                 profStatus.TextColor3 = SUCCESS
             end
         end
     end
 
-    -- Loop que atualiza o tempo restante a cada 1 minuto
     while task.wait(60) do
         if profStatus and profStatus.Parent and not isPermanent() then
-            local exp = getExpiresAt()
-            profStatus.Text = formatTempoRestante(exp)
+            profStatus.Text = formatTempoRestante(getExpiresAt())
         end
     end
 end)
