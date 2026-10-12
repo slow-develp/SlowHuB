@@ -2142,79 +2142,66 @@ keyStatus.TextXAlignment = Enum.TextXAlignment.Left
 keyStatus.ZIndex = 10002
 keyStatus.Parent = keyBody
 
--- ═══════════ VERIFICAÇÃO ═══════════
+-- ═══════════ SDK DO REDSTONEGUARD ═══════════
+_SlowHubSDK = nil
+_SlowHubSDKInit = false
+
+function initRedstoneSDK()
+    if _SlowHubSDKInit then return _SlowHubSDK end
+
+    local ok, sdk = pcall(function()
+        return loadstring(game:HttpGet("https://redstoneguard.xyz/redstoneguard-sdk.lua"))()
+    end)
+
+    if ok and sdk and type(sdk) == "table" then
+        pcall(function()
+            sdk.init({
+                scriptId = KEY_CONFIG.ScriptID,
+                apiKey = KEY_CONFIG.ApiKey
+            })
+        end)
+        _SlowHubSDK = sdk
+        _SlowHubSDKInit = true
+        return sdk
+    end
+
+    return nil
+end
 
 function verifyKeyWithRedstone(key)
-    if not key or key == "" then return false, "Digite uma Key" end
+    if not key or key == "" then
+        return false, "Digite uma Key"
+    end
 
-    -- 🔑 VIP fixa sempre funciona
+    local sdk = initRedstoneSDK()
+
+    if sdk then
+        local ok, result = pcall(function()
+            return sdk.verifyKey(key)
+        end)
+
+        if ok and result then
+            if result.valid == true then
+                -- Se nunca expira, marca como PERMANENTE
+                if result.expires_at == nil 
+                or result.expires_at == "never" 
+                or result.expires_at == 0 then
+                    setPermanent()
+                end
+                return true, "Key válida"
+            else
+                return false, tostring(result.reason or "Key inválida")
+            end
+        end
+    end
+
+    -- Fallback VIP (só aceita SlowHubVIP)
     if key == KEY then
         setPermanent()
         return true, "Key VIP válida"
     end
 
-    local resposta = nil
-
-    -- Tentativa 1: request() com POST (Delta suporta)
-    pcall(function()
-        local func = nil
-        if type(request) == "function" then func = request
-        elseif type(http_request) == "function" then func = http_request
-        elseif type(syn) == "table" and syn.request then func = syn.request
-        elseif type(http) == "table" and http.request then func = http.request
-        end
-
-        if func then
-            local r = func({
-                Url = "https://redstoneguard.xyz/api/keys/verify",
-                Method = "POST",
-                Headers = {
-                    ["Content-Type"] = "application/json",
-                    ["x-api-key"] = KEY_CONFIG.ApiKey
-                },
-                Body = HttpService:JSONEncode({
-                    scriptID = KEY_CONFIG.ScriptID,
-                    key = tostring(key)
-                })
-            })
-            if r and r.Body then resposta = r.Body end
-        end
-    end)
-
-    -- Tentativa 2: GET simples com query params
-    if not resposta then
-        pcall(function()
-            resposta = game:HttpGet(
-                "https://redstoneguard.xyz/api/keys/verify"
-                .. "?key=" .. tostring(key)
-                .. "&scriptID=" .. tostring(KEY_CONFIG.ScriptID)
-                .. "&apiKey=" .. tostring(KEY_CONFIG.ApiKey)
-            )
-        end)
-    end
-
-    -- Analisa resposta
-    if resposta and type(resposta) == "string" and resposta ~= "" then
-        local ok, data = pcall(function()
-            return HttpService:JSONDecode(resposta)
-        end)
-        if ok and type(data) == "table" then
-            if data.valid == true or data.success == true then
-                if data.permanent == true or data.type == "permanent" then
-                    setPermanent()
-                end
-                return true, "Key válida"
-            end
-            if data.message then
-                return false, tostring(data.message)
-            end
-            if data.error then
-                return false, tostring(data.error)
-            end
-        end
-    end
-
-    return false, "Key inválida ou não encontrada"
+    return false, "Erro na verificação"
 end
     
 function tryValidateKey()
