@@ -206,7 +206,6 @@ function saveExpiresAt(timestamp)
 end
 
 function getExpiresAt()
-function getExpiresAt()
     if type(isfile) == "function" and type(readfile) == "function" then
         local ok = pcall(function() return isfile("slowhub_expires.txt") end)
         if ok and isfile("slowhub_expires.txt") then
@@ -217,6 +216,8 @@ function getExpiresAt()
             end
         end
     end
+    return nil
+end
 
     -- ⚠️ FALLBACK: se não achou, assume 24h a partir da última key salva
     return nil
