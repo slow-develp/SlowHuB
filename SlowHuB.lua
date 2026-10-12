@@ -206,6 +206,7 @@ function saveExpiresAt(timestamp)
 end
 
 function getExpiresAt()
+function getExpiresAt()
     if type(isfile) == "function" and type(readfile) == "function" then
         local ok = pcall(function() return isfile("slowhub_expires.txt") end)
         if ok and isfile("slowhub_expires.txt") then
@@ -216,12 +217,10 @@ function getExpiresAt()
             end
         end
     end
-    return nil
-end
 
-    -- ⚠️ FALLBACK: se não achou, assume 24h a partir da última key salva
+    -- ⚠️ FALLBACK
     return nil
-    end
+  end
     
 function formatTempoRestante(expiresAt)
     if not expiresAt then return "✅ Ativa" end
@@ -2240,6 +2239,7 @@ function verifyKeyWithRedstone(key)
   end
     
 function tryValidateKey()
+function tryValidateKey()
     local typed = keyInput.Text or ""
     if typed == "" then
         keyStatus.TextColor3 = DANGER
@@ -2283,7 +2283,7 @@ function tryValidateKey()
             keyValidateBtn.Text = "✅  Validar Key"
         end
     end)
-end
+ end
 
     -- 🔑 MARCA COMO PERMANENTE se a key for a VIP
     if typed == KEY then
