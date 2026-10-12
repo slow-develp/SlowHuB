@@ -2237,7 +2237,7 @@ function verifyKeyWithRedstone(key)
     end
 
     return false, "Erro na verificação"
-    end 
+  end
     
 function tryValidateKey()
     local typed = keyInput.Text or ""
