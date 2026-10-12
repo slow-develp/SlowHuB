@@ -60,7 +60,6 @@ KEY_CONFIG = {
     DiscordLogo = "rbxassetid://125310003685274",
     RedstoneURL = "https://redstoneguard.xyz/key-system/a71c40c4-c64d-42dd-89e9-57db3bac8caa",
     SDKUrl = "https://redstoneguard.xyz/redstoneguard-sdk.lua",
-    SDKUrl = "https://redstoneguard.xyz/redstoneguard-sdk.lua",
     ScriptID = "a71c40c4-c64d-42dd-89e9-57db3bac8caa",
     ApiKey = "rg_live_6908fe4ac147f3e29609fea41821744fde57b67338a56d2c",
     KeyFile = "slowhub_key.txt",
