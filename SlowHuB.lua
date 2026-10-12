@@ -3237,6 +3237,7 @@ profStatus.TextXAlignment = Enum.TextXAlignment.Right
 profStatus.ZIndex = 130
 profStatus.Parent = profileCard
 
+-- 🔑 Atualiza o badge + tempo restante
 task.spawn(function()
     task.wait(0.3)
     if profBadge and profBadge.Parent then
@@ -3244,10 +3245,27 @@ task.spawn(function()
             profBadge.Text = "👑 PERMANENTE"
             profBadge.BackgroundColor3 = GOLD_COLOR
             profBadge.TextColor3 = Color3.fromRGB(30, 20, 0)
+            if profStatus and profStatus.Parent then
+                profStatus.Text = "♾️ Sem expiração"
+                profStatus.TextColor3 = GOLD_COLOR
+            end
         else
             profBadge.Text = "FREE USER"
             profBadge.BackgroundColor3 = ACCENT
             profBadge.TextColor3 = Color3.new(1, 1, 1)
+            if profStatus and profStatus.Parent then
+                local exp = getExpiresAt()
+                profStatus.Text = formatTempoRestante(exp)
+                profStatus.TextColor3 = SUCCESS
+            end
+        end
+    end
+
+    -- Loop que atualiza o tempo restante a cada 1 minuto
+    while task.wait(60) do
+        if profStatus and profStatus.Parent and not isPermanent() then
+            local exp = getExpiresAt()
+            profStatus.Text = formatTempoRestante(exp)
         end
     end
 end)
